@@ -16,10 +16,12 @@ argon2 = "0.5"
 rand = "0.8"
 jsonwebtoken = "9.3"
 thiserror = "1.0"
-tower-http = { version = "0.5", features = ["cors"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "request-id"] }
 utoipa = { version = "4.2", features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 sha2 = "0.10"
 hex = "0.4"
+tower_governor = "0.4"
+axum-prometheus = "0.7"

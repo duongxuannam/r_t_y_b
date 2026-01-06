@@ -1,9 +1,16 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{Router, routing::get};
+use axum_prometheus::PrometheusMetricLayer;
 use dotenvy::dotenv;
+use axum::http::{header, HeaderValue, Method};
 use sqlx::postgres::PgPoolOptions;
-use tower_http::cors::{Any, CorsLayer};
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor};
+use tower_http::{
+    cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer},
+    request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
+    trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer},
+};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 mod controllers;
@@ -70,17 +77,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState::from_env(pool)?;
 
+    let cors_layer = build_cors_layer(&state.cors_allowed_origins);
+
+    let governor_conf = GovernorConfigBuilder::default()
+        .per_second(state.rate_limit_per_second.get() as u64)
+        .burst_size(state.rate_limit_burst.get())
+        .key_extractor(SmartIpKeyExtractor)
+        .finish()
+        .expect("valid governor config");
+    let governor_conf = Arc::new(governor_conf);
+
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let metrics_route_handle = metric_handle.clone();
+
     let app = Router::new()
         .route("/health", get(health_controller::health_check))
+        .route("/metrics", get(move || async move { metrics_route_handle.render() }))
         .merge(auth_controller::routes())
         .merge(todo_controller::routes())
         .merge(docs_controller::routes(ApiDoc::openapi()))
-        .layer(
-            CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(Any)
-                .allow_headers(Any),
-        )
+        .layer(GovernorLayer {
+            config: governor_conf.clone(),
+        })
+        .layer(prometheus_layer)
+        .layer(TraceLayer::new_for_http()
+            .make_span_with(DefaultMakeSpan::new().include_headers(true))
+            .on_response(DefaultOnResponse::new().include_headers(true)))
+        .layer(PropagateRequestIdLayer::x_request_id())
+        .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
+        .layer(cors_layer)
         .with_state(state);
 
     let bind_addr: SocketAddr = std::env::var("BIND_ADDR")
@@ -91,4 +116,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     axum::serve(tokio::net::TcpListener::bind(bind_addr).await?, app).await?;
 
     Ok(())
+}
+
+fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins.iter().cloned()))
+        .allow_methods(AllowMethods::list([Method::GET, Method::POST, Method::PUT, Method::DELETE]))
+        .allow_headers(AllowHeaders::list([header::ACCEPT, header::CONTENT_TYPE, header::AUTHORIZATION]))
 }

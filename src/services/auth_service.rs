@@ -13,12 +13,7 @@ use crate::{
 };
 
 pub async fn register(state: &AppState, payload: RegisterRequest) -> Result<AuthResponse, AppError> {
-    if !payload.email.contains('@') {
-        return Err(AppError::BadRequest("invalid email".to_string()));
-    }
-    if payload.password.len() < 8 {
-        return Err(AppError::BadRequest("password must be at least 8 characters".to_string()));
-    }
+    validate_register_payload(&payload)?;
 
     let password_hash = hash_password(&payload.password)?;
     let user_id = Uuid::new_v4();
@@ -129,6 +124,17 @@ struct TokenPair {
     refresh_token: String,
 }
 
+fn validate_register_payload(payload: &RegisterRequest) -> Result<(), AppError> {
+    if !payload.email.contains('@') {
+        return Err(AppError::BadRequest("invalid email".to_string()));
+    }
+    if payload.password.len() < 8 {
+        return Err(AppError::BadRequest("password must be at least 8 characters".to_string()));
+    }
+
+    Ok(())
+}
+
 fn hash_password(password: &str) -> Result<String, AppError> {
     let salt = argon2::password_hash::SaltString::generate(&mut OsRng);
     let argon = argon2::Argon2::default();
@@ -184,4 +190,80 @@ async fn create_tokens(state: &AppState, user_id: Uuid) -> Result<TokenPair, App
     .await?;
 
     Ok(TokenPair { access_token, refresh_token })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::auth::RegisterRequest;
+
+    #[test]
+    fn password_hash_and_verify_round_trip() {
+        let password = "strong-password";
+        let hash = hash_password(password).expect("hash");
+        verify_password(password, &hash).expect("verify ok");
+
+        let wrong = verify_password("bad-password", &hash);
+        assert!(matches!(wrong, Err(AppError::Unauthorized)));
+    }
+
+    #[test]
+    fn hash_token_is_sha256_hex() {
+        let hashed = hash_token("refresh-token");
+        assert_eq!(hashed.len(), 64);
+        assert!(hashed.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn create_and_decode_access_token_round_trip() {
+        let secret = "test-secret";
+        let user_id = Uuid::new_v4();
+
+        let token = create_access_token(secret, user_id, 5).expect("token");
+        let claims = decode_token(secret, &token).expect("claims");
+
+        assert_eq!(claims.sub, user_id.to_string());
+    }
+
+    #[test]
+    fn validate_register_rejects_invalid_email() {
+        let payload = RegisterRequest {
+            email: "invalid-email".to_string(),
+            password: "password123".to_string(),
+        };
+
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("invalid email")));
+    }
+
+    #[test]
+    fn validate_register_rejects_short_password() {
+        let payload = RegisterRequest {
+            email: "user@example.com".to_string(),
+            password: "short".to_string(),
+        };
+
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("at least 8")));
+    }
+
+    #[test]
+    fn decode_token_rejects_wrong_secret() {
+        let user_id = Uuid::new_v4();
+        let token = create_access_token("expected", user_id, 5).expect("token");
+
+        let result = decode_token("wrong-secret", &token);
+        assert!(matches!(result, Err(AppError::Unauthorized)));
+    }
+
+    #[test]
+    fn create_access_token_sets_future_expiry() {
+        let secret = "another-test-secret";
+        let user_id = Uuid::new_v4();
+
+        let token = create_access_token(secret, user_id, 5).expect("token");
+        let claims = decode_token(secret, &token).expect("claims");
+
+        assert!(claims.exp >= Utc::now().timestamp() as usize);
+    }
 }
