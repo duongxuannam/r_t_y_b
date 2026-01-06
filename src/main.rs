@@ -62,6 +62,13 @@ struct ApiDoc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
+    if let Some(command) = std::env::args().nth(1) {
+        if command == "test" {
+            eprintln!("`cargo run test` passes a `test` arg to the server. Use `cargo test` instead.");
+            return Ok(());
+        }
+    }
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::from_default_env().add_directive("info".parse()?))
         .with(tracing_subscriber::fmt::layer())

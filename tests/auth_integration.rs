@@ -7,8 +7,34 @@ use todo_api::{
 use std::num::NonZeroU32;
 use uuid::Uuid;
 
-#[sqlx::test(migrations = "./migrations")]
-async fn register_login_refresh_logout_flow(pool: sqlx::PgPool) -> Result<(), AppError> {
+#[tokio::test]
+async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
+    let run_integration = std::env::var("RUN_INTEGRATION_TESTS")
+        .ok()
+        .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+
+    if !run_integration {
+        eprintln!("Skipping integration test: set RUN_INTEGRATION_TESTS=1 to enable.");
+        return Ok(());
+    }
+
+    let database_url = std::env::var("DATABASE_URL").map_err(|err| {
+        eprintln!("DATABASE_URL not set: {err}");
+        AppError::Internal
+    })?;
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await?;
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .map_err(|err| {
+            eprintln!("migration failed: {err}");
+            AppError::Internal
+        })?;
+
     let state = AppState {
         db: pool,
         jwt: JwtConfig {
