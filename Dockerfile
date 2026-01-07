@@ -3,16 +3,10 @@ FROM rust:1.78-bookworm AS builder
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
-RUN mkdir src \
-    && printf 'fn main() {}' > src/main.rs \
-    && printf 'pub fn placeholder() {}' > src/lib.rs
-RUN cargo build --release --locked
-
-RUN rm -rf src
 COPY src ./src
 COPY migrations ./migrations
 
-RUN cargo build --release --locked
+RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
 
