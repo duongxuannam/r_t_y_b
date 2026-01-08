@@ -19,6 +19,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Ensure Rust components
+        run: rustup component add rustfmt clippy
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -48,7 +50,7 @@ jobs:
           cache: npm
           cache-dependency-path: front-end/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         working-directory: front-end
       - name: Build frontend
         run: npm run build
