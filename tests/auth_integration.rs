@@ -1,10 +1,11 @@
+use std::num::NonZeroU32;
+
 use todo_api::{
     error::AppError,
     models::auth::{LoginRequest, RefreshRequest, RegisterRequest},
     services::auth_service,
-    state::{AppState, JwtConfig},
+    state::{AppState, EmailConfig, JwtConfig},
 };
-use std::num::NonZeroU32;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -41,6 +42,16 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
             secret: "test-secret-which-is-long-enough-1234567890".into(),
             access_ttl_minutes: 15,
             refresh_ttl_days: 7,
+        },
+        email: EmailConfig {
+            smtp_host: "smtp.example.com".into(),
+            smtp_port: 587,
+            smtp_username: "user".into(),
+            smtp_password: "pass".into(),
+            from_email: "no-reply@example.com".into(),
+            from_name: "Todo App".into(),
+            reset_url_base: "http://localhost:5173".into(),
+            reset_ttl_minutes: 30,
         },
         cors_allowed_origins: Vec::new(),
         rate_limit_per_second: NonZeroU32::new(10).unwrap(),

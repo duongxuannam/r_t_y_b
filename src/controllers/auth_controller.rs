@@ -1,13 +1,11 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    routing::post,
-    Json, Router,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
 
 use crate::{
     error::AppError,
-    models::auth::{AuthResponse, LoginRequest, RefreshRequest, RegisterRequest},
+    models::auth::{
+        AuthResponse, ForgotPasswordRequest, LoginRequest, MessageResponse, RefreshRequest,
+        RegisterRequest, ResetPasswordRequest,
+    },
     services::auth_service,
     state::AppState,
 };
@@ -84,10 +82,52 @@ pub async fn logout(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/forgot",
+    tag = "auth",
+    request_body = ForgotPasswordRequest,
+    responses(
+        (status = 200, body = MessageResponse),
+        (status = 400, body = crate::error::ErrorResponse)
+    )
+)]
+pub async fn forgot(
+    State(state): State<AppState>,
+    Json(payload): Json<ForgotPasswordRequest>,
+) -> Result<Json<MessageResponse>, AppError> {
+    auth_service::forgot_password(&state, payload).await?;
+    Ok(Json(MessageResponse {
+        message: "Nếu email tồn tại, reset link sẽ được gửi.".to_string(),
+    }))
+}
+
+#[utoipa::path(
+    post,
+    path = "/auth/reset",
+    tag = "auth",
+    request_body = ResetPasswordRequest,
+    responses(
+        (status = 200, body = MessageResponse),
+        (status = 400, body = crate::error::ErrorResponse)
+    )
+)]
+pub async fn reset(
+    State(state): State<AppState>,
+    Json(payload): Json<ResetPasswordRequest>,
+) -> Result<Json<MessageResponse>, AppError> {
+    auth_service::reset_password(&state, payload).await?;
+    Ok(Json(MessageResponse {
+        message: "Mật khẩu đã được cập nhật.".to_string(),
+    }))
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/auth/register", post(register))
         .route("/auth/login", post(login))
         .route("/auth/refresh", post(refresh))
         .route("/auth/logout", post(logout))
+        .route("/auth/forgot", post(forgot))
+        .route("/auth/reset", post(reset))
 }

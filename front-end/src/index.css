@@ -1,0 +1,93 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-base-100 text-base-content min-h-screen;
+  font-family: "Sora", system-ui, sans-serif;
+}
+
+.bg-aurora {
+  background:
+    radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.2), transparent 45%),
+    radial-gradient(circle at 80% 5%, rgba(236, 72, 153, 0.18), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.18), transparent 50%);
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.glass-panel {
+  @apply rounded-2xl border border-white/60 bg-white/70 backdrop-blur shadow-xl;
+}
+
+.auth-field input {
+  @apply h-12 rounded-2xl border border-base-300 bg-white/90 text-base shadow-sm transition;
+  @apply focus:border-primary focus:outline-none focus:ring-2;
+}
+
+.auth-field input:focus {
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.2);
+}
+
+.auth-field input::placeholder {
+  color: hsl(var(--bc) / 0.4);
+}
+
+.auth-field input:hover {
+  border-color: hsl(var(--bc) / 0.3);
+}
+
+.auth-field input:disabled {
+  background-color: hsl(var(--b2) / 0.6);
+  color: hsl(var(--bc) / 0.4);
+}
+
+.fade-up {
+  animation: fadeUp 0.7s ease forwards;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.fade-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.fade-delay-2 {
+  animation-delay: 0.25s;
+}
+
+.float-slow {
+  animation: float 9s ease-in-out infinite;
+}
+
+.float-fast {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}

@@ -97,11 +97,7 @@ pub async fn update_todo(
     Ok(todo)
 }
 
-pub async fn delete_todo(
-    state: &AppState,
-    user_id: Uuid,
-    todo_id: Uuid,
-) -> Result<(), AppError> {
+pub async fn delete_todo(state: &AppState, user_id: Uuid, todo_id: Uuid) -> Result<(), AppError> {
     let result = sqlx::query("DELETE FROM todos WHERE id = $1 AND user_id = $2")
         .bind(todo_id)
         .bind(user_id)
@@ -131,7 +127,9 @@ mod tests {
     fn normalize_title_rejects_empty() {
         let result = normalize_title("   ");
 
-        assert!(matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("title is required")));
+        assert!(
+            matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("title is required"))
+        );
     }
 
     #[test]
@@ -143,7 +141,9 @@ mod tests {
 
         let result = ensure_update_payload(&payload);
 
-        assert!(matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("nothing to update")));
+        assert!(
+            matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("nothing to update"))
+        );
     }
 
     #[test]

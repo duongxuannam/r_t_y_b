@@ -1,4 +1,4 @@
-use axum::{response::Html, Router};
+use axum::{Router, response::Html};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::state::AppState;

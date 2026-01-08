@@ -19,10 +19,26 @@ pub struct RefreshRequest {
     pub refresh_token: String,
 }
 
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct ForgotPasswordRequest {
+    pub email: String,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct ResetPasswordRequest {
+    pub token: String,
+    pub password: String,
+}
+
 #[derive(Debug, Serialize, FromRow, utoipa::ToSchema)]
 pub struct UserResponse {
     pub id: Uuid,
     pub email: String,
+}
+
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct MessageResponse {
+    pub message: String,
 }
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]

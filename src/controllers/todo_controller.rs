@@ -1,13 +1,13 @@
 use axum::{
+    Json, Router,
     extract::{Path, State},
     routing::get,
-    Json, Router,
 };
 use uuid::Uuid;
 
 use crate::{
-    error::AppError,
     controllers::extractors::AuthUser,
+    error::AppError,
     models::todo::{CreateTodoRequest, TodoResponse, UpdateTodoRequest},
     services::todo_service,
     state::AppState,
@@ -112,5 +112,8 @@ pub async fn delete_todo(
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/todos", get(list_todos).post(create_todo))
-        .route("/todos/:id", get(get_todo).put(update_todo).delete(delete_todo))
+        .route(
+            "/todos/:id",
+            get(get_todo).put(update_todo).delete(delete_todo),
+        )
 }
