@@ -34,10 +34,10 @@ pub async fn register(
     .fetch_one(&state.db)
     .await
     .map_err(|err| {
-        if let sqlx::Error::Database(db_err) = &err {
-            if db_err.constraint() == Some("users_email_key") {
-                return AppError::BadRequest("email already registered".to_string());
-            }
+        if let sqlx::Error::Database(db_err) = &err
+            && db_err.constraint() == Some("users_email_key")
+        {
+            return AppError::BadRequest("email already registered".to_string());
         }
         AppError::from(err)
     })?;
