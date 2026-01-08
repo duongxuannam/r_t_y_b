@@ -16,11 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
-      - name: Ensure Rust components
-        run: rustup component add rustfmt clippy
       - name: Cache cargo
         uses: actions/cache@v4
         with:
