@@ -33,14 +33,16 @@ const writeStorage = (key: string, value: unknown) => {
 export const themeOptions = [
   { id: 'light', label: 'Light', color: '#f8fafc' },
   { id: 'dark', label: 'Dark', color: '#0f172a' },
-  { id: 'cupcake', label: 'Cupcake', color: '#f9a8d4' },
-  { id: 'emerald', label: 'Emerald', color: '#34d399' },
-  { id: 'corporate', label: 'Corporate', color: '#93c5fd' },
-  { id: 'synthwave', label: 'Synthwave', color: '#a855f7' },
 ]
 
+const allowedThemes = ['light', 'dark'] as const
+type ThemeId = (typeof allowedThemes)[number]
+
+const normalizeTheme = (value: string | null | undefined): ThemeId =>
+  allowedThemes.includes(value as ThemeId) ? (value as ThemeId) : 'light'
+
 export const appState = observable({
-  theme: 'light',
+  theme: 'light' as ThemeId,
   auth: {
     accessToken: '',
     refreshToken: '',
@@ -84,11 +86,15 @@ export const authActions = {
 export const themeActions = {
   hydrate() {
     const stored = readStorage<string>(storageKeys.theme)
-    if (!stored) return
-    appState.theme.set(stored)
+    const normalized = normalizeTheme(stored)
+    appState.theme.set(normalized)
+    if (stored !== normalized) {
+      writeStorage(storageKeys.theme, normalized)
+    }
   },
   setTheme(theme: string) {
-    appState.theme.set(theme)
-    writeStorage(storageKeys.theme, theme)
+    const normalized = normalizeTheme(theme)
+    appState.theme.set(normalized)
+    writeStorage(storageKeys.theme, normalized)
   },
 }
