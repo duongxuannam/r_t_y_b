@@ -11,6 +11,33 @@ import type { CreateTodoRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000/api'
 
+const normalizeErrorMessage = (raw: string, status: number): string => {
+  let message = raw
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { message?: string; error?: string }
+      message = parsed?.message || parsed?.error || raw
+    } catch {
+      message = raw
+    }
+  }
+
+  const cleaned = message.trim()
+  if (!cleaned) {
+    return `Request failed with ${status}`
+  }
+
+  switch (cleaned.toLowerCase()) {
+    case 'unauthorized':
+      return 'Invalid email or password.'
+    case 'forbidden':
+      return 'You do not have permission to perform this action.'
+    default:
+      return cleaned
+  }
+}
+
 const request = async<T>(path: string, options ?: RequestInit): Promise<T> => {
   const accessToken = appState.auth.accessToken.get()
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -24,7 +51,7 @@ const request = async<T>(path: string, options ?: RequestInit): Promise<T> => {
 
   if (!response.ok) {
     const message = await response.text()
-  throw new Error(message || `Request failed with ${response.status}`)
+  throw new Error(normalizeErrorMessage(message, response.status))
   }
 
   if (response.status === 204) {
