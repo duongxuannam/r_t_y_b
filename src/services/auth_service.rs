@@ -9,8 +9,8 @@ use uuid::Uuid;
 use crate::{
     error::AppError,
     models::auth::{
-        AuthResponse, Claims, ForgotPasswordRequest, LoginRequest, RefreshRequest,
-        RegisterRequest, ResetPasswordRequest, UserResponse,
+        AuthResponse, Claims, ForgotPasswordRequest, LoginRequest, RegisterRequest,
+        ResetPasswordRequest, UserResponse,
     },
     services::email_service,
     state::AppState,
@@ -19,7 +19,7 @@ use crate::{
 pub async fn register(
     state: &AppState,
     payload: RegisterRequest,
-) -> Result<AuthResponse, AppError> {
+) -> Result<(AuthResponse, String), AppError> {
     validate_register_payload(&payload)?;
 
     let password_hash = hash_password(&payload.password)?;
@@ -43,14 +43,19 @@ pub async fn register(
     })?;
 
     let tokens = create_tokens(state, user.id).await?;
-    Ok(AuthResponse {
+    Ok((
+        AuthResponse {
         user,
         access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-    })
+        },
+        tokens.refresh_token,
+    ))
 }
 
-pub async fn login(state: &AppState, payload: LoginRequest) -> Result<AuthResponse, AppError> {
+pub async fn login(
+    state: &AppState,
+    payload: LoginRequest,
+) -> Result<(AuthResponse, String), AppError> {
     let user =
         sqlx::query_as::<_, UserRow>("SELECT id, email, password_hash FROM users WHERE email = $1")
             .bind(payload.email.to_lowercase())
@@ -61,18 +66,23 @@ pub async fn login(state: &AppState, payload: LoginRequest) -> Result<AuthRespon
     verify_password(&payload.password, &user.password_hash)?;
 
     let tokens = create_tokens(state, user.id).await?;
-    Ok(AuthResponse {
-        user: UserResponse {
-            id: user.id,
-            email: user.email,
+    Ok((
+        AuthResponse {
+            user: UserResponse {
+                id: user.id,
+                email: user.email,
+            },
+            access_token: tokens.access_token,
         },
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-    })
+        tokens.refresh_token,
+    ))
 }
 
-pub async fn refresh(state: &AppState, payload: RefreshRequest) -> Result<AuthResponse, AppError> {
-    let token_hash = hash_token(&payload.refresh_token);
+pub async fn refresh(
+    state: &AppState,
+    refresh_token: &str,
+) -> Result<(AuthResponse, String), AppError> {
+    let token_hash = hash_token(refresh_token);
 
     let row = sqlx::query_as::<_, RefreshRow>(
         "SELECT rt.user_id, rt.expires_at, u.email FROM refresh_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.token_hash = $1",
@@ -92,18 +102,20 @@ pub async fn refresh(state: &AppState, payload: RefreshRequest) -> Result<AuthRe
         .await?;
 
     let tokens = create_tokens(state, row.user_id).await?;
-    Ok(AuthResponse {
-        user: UserResponse {
-            id: row.user_id,
-            email: row.email,
+    Ok((
+        AuthResponse {
+            user: UserResponse {
+                id: row.user_id,
+                email: row.email,
+            },
+            access_token: tokens.access_token,
         },
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-    })
+        tokens.refresh_token,
+    ))
 }
 
-pub async fn logout(state: &AppState, payload: RefreshRequest) -> Result<(), AppError> {
-    let token_hash = hash_token(&payload.refresh_token);
+pub async fn logout(state: &AppState, refresh_token: &str) -> Result<(), AppError> {
+    let token_hash = hash_token(refresh_token);
 
     let result = sqlx::query("DELETE FROM refresh_tokens WHERE token_hash = $1")
         .bind(token_hash)

@@ -1,14 +1,17 @@
 import { observer, useObservable } from '@legendapp/state/react'
+import { useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { api } from '../services/api'
-import { authActions, appState } from '../state/appState'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { api } from '../services/api'
+import { appState, authActions } from '../state/appState'
 
 const AuthPage = observer(() => {
+  const navigate = useNavigate()
   const form = useObservable({
     mode: 'login',
     email: '',
@@ -32,11 +35,11 @@ const AuthPage = observer(() => {
     onSuccess: (response) => {
       authActions.setAuth({
         accessToken: response.access_token,
-        refreshToken: response.refresh_token,
         user: response.user,
       })
       form.password.set('')
       form.notice.set('Authenticated successfully.')
+      navigate('/app')
     },
   })
 
@@ -61,18 +64,41 @@ const AuthPage = observer(() => {
   })
 
   const isAuthed = appState.auth.accessToken.get().length > 0
+  useEffect(() => {
+    form.mode.set(isAuthed ? 'reset' : 'login')
+  }, [form, isAuthed])
   const errorMessage =
     (authMutation.error as Error)?.message ||
     (forgotMutation.error as Error)?.message ||
     (resetMutation.error as Error)?.message ||
     'Auth request failed.'
-  const successMessage = form.notice.get() || 'Authenticated successfully.'
+  const successMessage = form.notice.get()
+  const showResetSuccess = form.mode.get() === 'reset' && resetMutation.isSuccess && successMessage
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const mode = form.mode.get()
+
+    if ((mode === 'login' || mode === 'register') && !authMutation.isPending) {
+      authMutation.mutate()
+      return
+    }
+
+    if (mode === 'forgot' && !forgotMutation.isPending) {
+      forgotMutation.mutate()
+      return
+    }
+
+    if (mode === 'reset' && !resetMutation.isPending) {
+      resetMutation.mutate()
+    }
+  }
+
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
-      <div className="relative fade-up">
+    <section className="grid gap-6 lg:flex lg:items-stretch lg:gap-8">
+      <div className="relative flex flex-col fade-up lg:w-[1.15fr]">
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -top-8 -left-6 bg-primary/15 blur-2xl sm:block" />
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -bottom-10 right-8 bg-secondary/15 blur-2xl sm:block" />
-        <div className="relative p-6 overflow-hidden glass-panel sm:p-8">
+        <div className="relative flex h-full flex-col overflow-hidden glass-panel p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -85,18 +111,23 @@ const AuthPage = observer(() => {
                 Connect with the Rust API to manage todos with JWT auth.
               </p>
             </div>
-            <div className="px-4 py-1 text-xs font-semibold rounded-full shadow-sm bg-card/80 text-muted-foreground">
-              JWT powered
+            <div className='flex '>
+              <div className="px-4 py-1 text-xs font-semibold rounded-full shadow-sm bg-card/80 text-muted-foreground">
+                JWT powered
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 p-1 mt-6 text-xs rounded-2xl bg-secondary/70 sm:flex sm:flex-wrap sm:rounded-full sm:text-sm">
-            {[
-              { id: 'login', label: 'Login' },
-              { id: 'register', label: 'Register' },
-              { id: 'forgot', label: 'Forgot' },
-              { id: 'reset', label: 'Reset' },
-            ].map((tab) => {
+            {(
+              isAuthed
+                ? [{ id: 'reset', label: 'Reset' }]
+                : [
+                    { id: 'login', label: 'Login' },
+                    { id: 'register', label: 'Register' },
+                    { id: 'forgot', label: 'Forgot' },
+                  ]
+            ).map((tab) => {
               const isActive = form.mode.get() === tab.id
               return (
                 <button
@@ -105,6 +136,7 @@ const AuthPage = observer(() => {
                     ? 'bg-card text-foreground shadow'
                     : 'text-muted-foreground hover:text-foreground'
                     }`}
+                  type="button"
                   onClick={() => form.mode.set(tab.id)}
                 >
                   {tab.label}
@@ -113,7 +145,7 @@ const AuthPage = observer(() => {
             })}
           </div>
 
-          <div className="mt-6 space-y-4">
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Email
@@ -142,7 +174,7 @@ const AuthPage = observer(() => {
                 </div>
                 <Button
                   className="w-full shadow-glow"
-                  onClick={() => authMutation.mutate()}
+                  type="submit"
                   disabled={authMutation.isPending}
                 >
                   {authMutation.isPending ? 'Working...' : 'Continue'}
@@ -156,7 +188,7 @@ const AuthPage = observer(() => {
                 </p>
                 <Button
                   className="w-full shadow-glow"
-                  onClick={() => forgotMutation.mutate()}
+                  type="submit"
                   disabled={forgotMutation.isPending}
                 >
                   {forgotMutation.isPending ? 'Sending...' : 'Send reset email'}
@@ -191,7 +223,7 @@ const AuthPage = observer(() => {
                 </div>
                 <Button
                   className="w-full shadow-glow"
-                  onClick={() => resetMutation.mutate()}
+                  type="submit"
                   disabled={resetMutation.isPending}
                 >
                   {resetMutation.isPending ? 'Updating...' : 'Reset password'}
@@ -204,40 +236,39 @@ const AuthPage = observer(() => {
             {(authMutation.isError ||
               forgotMutation.isError ||
               resetMutation.isError ||
-              form.notice.get() ||
-              isAuthed) && (
-              <Alert
-                variant={
-                  authMutation.isError || forgotMutation.isError || resetMutation.isError
-                    ? 'destructive'
-                    : 'success'
-                }
-                className="flex items-start gap-3"
-              >
-                {authMutation.isError || forgotMutation.isError || resetMutation.isError ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" />
-                )}
-                <div>
-                  <AlertTitle>
-                    {authMutation.isError || forgotMutation.isError || resetMutation.isError
-                      ? 'Authentication failed'
-                      : 'Success'}
-                  </AlertTitle>
-                  <AlertDescription>
-                    {authMutation.isError || forgotMutation.isError || resetMutation.isError
-                      ? errorMessage
-                      : successMessage}
-                  </AlertDescription>
-                </div>
-              </Alert>
-            )}
-          </div>
+              showResetSuccess) && (
+                <Alert
+                  variant={
+                    authMutation.isError || forgotMutation.isError || resetMutation.isError
+                      ? 'destructive'
+                      : 'success'
+                  }
+                  className="flex items-start gap-3"
+                >
+                  {authMutation.isError || forgotMutation.isError || resetMutation.isError ? (
+                    <AlertCircle className="w-4 h-4" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <div>
+                    <AlertTitle>
+                      {authMutation.isError || forgotMutation.isError || resetMutation.isError
+                        ? 'Authentication failed'
+                        : 'Success'}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {authMutation.isError || forgotMutation.isError || resetMutation.isError
+                        ? errorMessage
+                        : successMessage}
+                    </AlertDescription>
+                  </div>
+                </Alert>
+              )}
+          </form>
         </div>
       </div>
 
-      <div className="p-6 glass-panel fade-up fade-delay-1 sm:p-8">
+      <div className="glass-panel flex h-full flex-col p-6 fade-up fade-delay-1 sm:p-8 lg:w-[0.85fr]">
         <h2 className="text-xl font-semibold font-display sm:text-2xl">Auth checklist</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           What happens after you connect your account.

@@ -1,16 +1,23 @@
 import { observer, useObservable } from '@legendapp/state/react'
-import { useState } from 'react'
-import { AlertCircle, AlertTriangle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { appState } from '../state/appState'
 import { useTodos } from '../hooks/useTodos'
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Skeleton } from '../components/ui/skeleton'
+import { message } from '../components/ui/message'
 
 const TodoPage = observer(() => {
   const todoForm = useObservable({ title: '' })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const lastErrorRef = useRef<Record<string, string | null>>({
+    list: null,
+    create: null,
+    update: null,
+    delete: null,
+  })
   const isAuthed = appState.auth.accessToken.get().length > 0
   const { listQuery, createMutation, updateMutation, deleteMutation } = useTodos(isAuthed)
 
@@ -21,6 +28,62 @@ const TodoPage = observer(() => {
     if (!title) return
     createMutation.mutate({ title }, { onSuccess: () => todoForm.title.set('') })
   }
+
+  useEffect(() => {
+    if (listQuery.isError) {
+      const errorMessage = (listQuery.error as Error).message || 'Unable to load todos.'
+      if (lastErrorRef.current.list !== errorMessage) {
+        lastErrorRef.current.list = errorMessage
+        message.error(errorMessage)
+      }
+    }
+  }, [listQuery.isError, listQuery.error])
+
+  useEffect(() => {
+    if (createMutation.isError) {
+      const errorMessage = (createMutation.error as Error)?.message || 'Request failed.'
+      if (lastErrorRef.current.create !== errorMessage) {
+        lastErrorRef.current.create = errorMessage
+        message.error(errorMessage)
+      }
+    }
+  }, [createMutation.isError, createMutation.error])
+
+  useEffect(() => {
+    if (updateMutation.isError) {
+      const errorMessage = (updateMutation.error as Error)?.message || 'Request failed.'
+      if (lastErrorRef.current.update !== errorMessage) {
+        lastErrorRef.current.update = errorMessage
+        message.error(errorMessage)
+      }
+    }
+  }, [updateMutation.isError, updateMutation.error])
+
+  useEffect(() => {
+    if (deleteMutation.isError) {
+      const errorMessage = (deleteMutation.error as Error)?.message || 'Request failed.'
+      if (lastErrorRef.current.delete !== errorMessage) {
+        lastErrorRef.current.delete = errorMessage
+        message.error(errorMessage)
+      }
+    }
+  }, [deleteMutation.isError, deleteMutation.error])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined
+    }
+
+    if (isCreateOpen) {
+      document.documentElement.setAttribute('data-modal-open', 'true')
+    } else {
+      document.documentElement.removeAttribute('data-modal-open')
+    }
+
+    return () => {
+      document.documentElement.removeAttribute('data-modal-open')
+    }
+  }, [isCreateOpen])
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
@@ -65,17 +128,7 @@ const TodoPage = observer(() => {
           </div>
         )}
 
-        {listQuery.isError && (
-          <Alert variant="destructive" className="mt-6">
-            <AlertCircle className="h-4 w-4" />
-            <div>
-              <AlertTitle>Unable to load todos</AlertTitle>
-              <AlertDescription>
-                {(listQuery.error as Error).message || 'Unable to load todos.'}
-              </AlertDescription>
-            </div>
-          </Alert>
-        )}
+        {listQuery.isError && null}
 
         {isAuthed && !listQuery.isLoading && (
           <div className="mt-6 space-y-3">
@@ -162,32 +215,19 @@ const TodoPage = observer(() => {
               Login required before creating tasks.
             </p>
           )}
-          {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <div>
-                <AlertTitle>Request failed</AlertTitle>
-                <AlertDescription>
-                  {(createMutation.error as Error)?.message ||
-                    (updateMutation.error as Error)?.message ||
-                    (deleteMutation.error as Error)?.message ||
-                    'Request failed.'}
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
+          {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && null}
         </div>
       </div>
 
       {isCreateOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4 sm:hidden">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 sm:hidden">
           <button
             className="absolute inset-0 cursor-default"
             onClick={() => setIsCreateOpen(false)}
             aria-label="Close create todo modal"
           />
           <div
-            className="glass-panel relative z-10 w-full max-w-sm p-5 shadow-2xl"
+            className="glass-panel relative z-10 mx-4 w-full max-w-sm p-5 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -226,24 +266,12 @@ const TodoPage = observer(() => {
                   Login required before creating tasks.
                 </p>
               )}
-              {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <div>
-                    <AlertTitle>Request failed</AlertTitle>
-                    <AlertDescription>
-                      {(createMutation.error as Error)?.message ||
-                        (updateMutation.error as Error)?.message ||
-                        (deleteMutation.error as Error)?.message ||
-                        'Request failed.'}
-                    </AlertDescription>
-                  </div>
-                </Alert>
-              )}
+              {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && null}
             </div>
           </div>
         </div>
       )}
+
     </section>
   )
 })

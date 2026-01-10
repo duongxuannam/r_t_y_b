@@ -72,6 +72,11 @@ body {
   font-family: "Sora", system-ui, sans-serif;
 }
 
+[data-modal-open='true'] .app-header {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .bg-aurora {
   background:
     radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.2), transparent 45%),
@@ -144,4 +149,57 @@ body {
   50% {
     transform: translateY(-14px);
   }
+}
+
+.message-item {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  will-change: transform, opacity;
+}
+
+[data-theme='dark'] .message-item {
+  background-color: hsl(222 47% 20% / 0.98);
+  border-color: hsl(217 32% 38% / 0.75);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='dark'] .message-item.text-destructive {
+  color: hsl(0 84% 72%);
+}
+
+[data-theme='dark'] .message-item.text-warning {
+  color: hsl(38 92% 62%);
+}
+
+[data-theme='dark'] .message-item.text-success {
+  color: hsl(142 70% 62%);
+}
+
+.message-enter {
+  animation: messageIn 0.25s ease-out forwards;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes messageOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.message-exit {
+  animation: messageOut 0.2s ease-in forwards;
 }

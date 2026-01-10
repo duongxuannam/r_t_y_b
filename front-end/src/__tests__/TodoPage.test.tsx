@@ -6,7 +6,6 @@ import { renderWithProviders } from '../test/testUtils'
 describe('TodoPage', () => {
   beforeEach(() => {
     appState.auth.accessToken.set('')
-    appState.auth.refreshToken.set('')
     appState.auth.user.set({ id: '', email: '' })
   })
 

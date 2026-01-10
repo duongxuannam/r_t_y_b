@@ -16,7 +16,6 @@ export type UserResponse = {
 export type AuthResponse = {
   user: UserResponse
   access_token: string
-  refresh_token: string
 }
 
 export type ForgotPasswordRequest = {

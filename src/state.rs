@@ -11,6 +11,8 @@ pub struct AppState {
     pub cors_allowed_origins: Vec<HeaderValue>,
     pub rate_limit_per_second: NonZeroU32,
     pub rate_limit_burst: NonZeroU32,
+    pub refresh_cookie_name: String,
+    pub refresh_cookie_secure: bool,
 }
 
 #[derive(Clone)]
@@ -89,6 +91,15 @@ impl AppState {
             10,
         )?;
 
+        let refresh_cookie_name = std::env::var("REFRESH_COOKIE_NAME")
+            .unwrap_or_else(|_| "todo_refresh".to_string());
+        let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+        let refresh_cookie_secure = parse_bool(
+            "REFRESH_COOKIE_SECURE",
+            std::env::var("REFRESH_COOKIE_SECURE").ok(),
+            env_mode == "production",
+        )?;
+
         Ok(Self {
             db,
             jwt: JwtConfig {
@@ -109,6 +120,8 @@ impl AppState {
             cors_allowed_origins,
             rate_limit_per_second,
             rate_limit_burst,
+            refresh_cookie_name,
+            refresh_cookie_secure,
         })
     }
 }
@@ -155,4 +168,21 @@ fn parse_allowed_origins(
             HeaderValue::from_str(&origin).map_err(|_| format!("Invalid origin: {origin}").into())
         })
         .collect()
+}
+
+fn parse_bool(
+    name: &str,
+    raw: Option<String>,
+    default: bool,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let value = match raw {
+        Some(val) => val,
+        None => return Ok(default),
+    };
+
+    match value.to_lowercase().as_str() {
+        "true" | "1" | "yes" => Ok(true),
+        "false" | "0" | "no" => Ok(false),
+        _ => Err(format!("{name} must be a boolean").into()),
+    }
 }

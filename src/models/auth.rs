@@ -16,7 +16,8 @@ pub struct LoginRequest {
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RefreshRequest {
-    pub refresh_token: String,
+    #[serde(default)]
+    pub refresh_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -45,7 +46,6 @@ pub struct MessageResponse {
 pub struct AuthResponse {
     pub user: UserResponse,
     pub access_token: String,
-    pub refresh_token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -1,17 +1,7 @@
 import { observable } from '@legendapp/state'
 
 const storageKeys = {
-  auth: 'todo-pulse-auth',
   theme: 'todo-pulse-theme',
-}
-
-type StoredAuth = {
-  accessToken: string
-  refreshToken: string
-  user: {
-    id: string
-    email: string
-  }
 }
 
 const readStorage = <T,>(key: string): T | null => {
@@ -45,7 +35,6 @@ export const appState = observable({
   theme: 'light' as ThemeId,
   auth: {
     accessToken: '',
-    refreshToken: '',
     user: {
       id: '',
       email: '',
@@ -54,32 +43,13 @@ export const appState = observable({
 })
 
 export const authActions = {
-  hydrate() {
-    const stored = readStorage<StoredAuth>(storageKeys.auth)
-    if (!stored) return
-    appState.auth.accessToken.set(stored.accessToken)
-    appState.auth.refreshToken.set(stored.refreshToken)
-    appState.auth.user.set(stored.user)
-  },
-  persist() {
-    const payload: StoredAuth = {
-      accessToken: appState.auth.accessToken.get(),
-      refreshToken: appState.auth.refreshToken.get(),
-      user: appState.auth.user.get(),
-    }
-    writeStorage(storageKeys.auth, payload)
-  },
-  setAuth(payload: StoredAuth) {
+  setAuth(payload: { accessToken: string; user: { id: string; email: string } }) {
     appState.auth.accessToken.set(payload.accessToken)
-    appState.auth.refreshToken.set(payload.refreshToken)
     appState.auth.user.set(payload.user)
-    authActions.persist()
   },
   logout() {
     appState.auth.accessToken.set('')
-    appState.auth.refreshToken.set('')
     appState.auth.user.set({ id: '', email: '' })
-    writeStorage(storageKeys.auth, null)
   },
 }
 

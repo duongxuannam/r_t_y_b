@@ -1,4 +1,7 @@
 use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
+use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::{Cookie, SameSite};
+use time::Duration;
 
 use crate::{
     error::AppError,
@@ -22,10 +25,12 @@ use crate::{
 )]
 pub async fn register(
     State(state): State<AppState>,
+    jar: CookieJar,
     Json(payload): Json<RegisterRequest>,
-) -> Result<(StatusCode, Json<AuthResponse>), AppError> {
-    let response = auth_service::register(&state, payload).await?;
-    Ok((StatusCode::CREATED, Json(response)))
+) -> Result<(StatusCode, CookieJar, Json<AuthResponse>), AppError> {
+    let (response, refresh_token) = auth_service::register(&state, payload).await?;
+    let jar = jar.add(build_refresh_cookie(&state, refresh_token));
+    Ok((StatusCode::CREATED, jar, Json(response)))
 }
 
 #[utoipa::path(
@@ -40,10 +45,12 @@ pub async fn register(
 )]
 pub async fn login(
     State(state): State<AppState>,
+    jar: CookieJar,
     Json(payload): Json<LoginRequest>,
-) -> Result<Json<AuthResponse>, AppError> {
-    let response = auth_service::login(&state, payload).await?;
-    Ok(Json(response))
+) -> Result<(CookieJar, Json<AuthResponse>), AppError> {
+    let (response, refresh_token) = auth_service::login(&state, payload).await?;
+    let jar = jar.add(build_refresh_cookie(&state, refresh_token));
+    Ok((jar, Json(response)))
 }
 
 #[utoipa::path(
@@ -58,10 +65,13 @@ pub async fn login(
 )]
 pub async fn refresh(
     State(state): State<AppState>,
-    Json(payload): Json<RefreshRequest>,
-) -> Result<Json<AuthResponse>, AppError> {
-    let response = auth_service::refresh(&state, payload).await?;
-    Ok(Json(response))
+    jar: CookieJar,
+    payload: Option<Json<RefreshRequest>>,
+) -> Result<(CookieJar, Json<AuthResponse>), AppError> {
+    let refresh_token = extract_refresh_token(&state, &jar, payload)?;
+    let (response, new_refresh_token) = auth_service::refresh(&state, &refresh_token).await?;
+    let jar = jar.add(build_refresh_cookie(&state, new_refresh_token));
+    Ok((jar, Json(response)))
 }
 
 #[utoipa::path(
@@ -76,10 +86,13 @@ pub async fn refresh(
 )]
 pub async fn logout(
     State(state): State<AppState>,
-    Json(payload): Json<RefreshRequest>,
-) -> Result<StatusCode, AppError> {
-    auth_service::logout(&state, payload).await?;
-    Ok(StatusCode::NO_CONTENT)
+    jar: CookieJar,
+    payload: Option<Json<RefreshRequest>>,
+) -> Result<(CookieJar, StatusCode), AppError> {
+    let refresh_token = extract_refresh_token(&state, &jar, payload)?;
+    auth_service::logout(&state, &refresh_token).await?;
+    let jar = jar.remove(clear_refresh_cookie(&state));
+    Ok((jar, StatusCode::NO_CONTENT))
 }
 
 #[utoipa::path(
@@ -130,4 +143,47 @@ pub fn routes() -> Router<AppState> {
         .route("/auth/logout", post(logout))
         .route("/auth/forgot", post(forgot))
         .route("/auth/reset", post(reset))
+}
+
+fn build_refresh_cookie(state: &AppState, refresh_token: String) -> Cookie<'static> {
+    let max_age = Duration::days(state.jwt.refresh_ttl_days);
+    let mut builder = Cookie::build((state.refresh_cookie_name.clone(), refresh_token))
+        .path("/api/auth")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(max_age);
+    if state.refresh_cookie_secure {
+        builder = builder.secure(true);
+    }
+    builder.finish()
+}
+
+fn clear_refresh_cookie(state: &AppState) -> Cookie<'static> {
+    let mut builder = Cookie::build((state.refresh_cookie_name.clone(), ""))
+        .path("/api/auth")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(Duration::ZERO);
+    if state.refresh_cookie_secure {
+        builder = builder.secure(true);
+    }
+    builder.finish()
+}
+
+fn extract_refresh_token(
+    state: &AppState,
+    jar: &CookieJar,
+    payload: Option<Json<RefreshRequest>>,
+) -> Result<String, AppError> {
+    if let Some(payload) = payload {
+        if let Some(token) = payload.refresh_token {
+            if !token.trim().is_empty() {
+                return Ok(token);
+            }
+        }
+    }
+
+    jar.get(&state.refresh_cookie_name)
+        .map(|cookie| cookie.value().to_string())
+        .ok_or(AppError::Unauthorized)
 }

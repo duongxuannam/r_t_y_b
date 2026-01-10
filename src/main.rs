@@ -165,6 +165,7 @@ fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
             header::CONTENT_TYPE,
             header::AUTHORIZATION,
         ]))
+        .allow_credentials(true)
 }
 
 fn build_static_service() -> ServeDir<ServeFile> {
@@ -176,11 +177,17 @@ fn build_static_service() -> ServeDir<ServeFile> {
 }
 
 fn load_env() -> Result<(), Box<dyn std::error::Error>> {
-    let manifest_env = Path::new(env!("CARGO_MANIFEST_DIR")).join(".env");
+    let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+    let env_filename = if env_mode == "production" {
+        ".env.production"
+    } else {
+        ".env"
+    };
+    let manifest_env = Path::new(env!("CARGO_MANIFEST_DIR")).join(env_filename);
     let env_path = if manifest_env.exists() {
         manifest_env
     } else {
-        PathBuf::from(".env")
+        PathBuf::from(env_filename)
     };
 
     if env_path.exists() {
