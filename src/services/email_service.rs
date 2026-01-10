@@ -18,10 +18,7 @@ pub async fn send_reset_email(
             .parse()
             .map_err(|_| AppError::Internal)?,
     );
-    let to = Mailbox::new(
-        None,
-        to_email.parse().map_err(|_| AppError::Internal)?,
-    );
+    let to = Mailbox::new(None, to_email.parse().map_err(|_| AppError::Internal)?);
 
     let body = format!(
         "Bạn đã yêu cầu đặt lại mật khẩu.\n\nNhấn link sau để đặt lại: {reset_link}\n\nLink hết hạn sau {} phút.",

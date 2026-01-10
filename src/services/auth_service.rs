@@ -45,8 +45,8 @@ pub async fn register(
     let tokens = create_tokens(state, user.id).await?;
     Ok((
         AuthResponse {
-        user,
-        access_token: tokens.access_token,
+            user,
+            access_token: tokens.access_token,
         },
         tokens.refresh_token,
     ))
@@ -135,12 +135,10 @@ pub async fn forgot_password(
 ) -> Result<(), AppError> {
     validate_email(&payload.email)?;
 
-    let user = sqlx::query_as::<_, UserResponse>(
-        "SELECT id, email FROM users WHERE email = $1",
-    )
-    .bind(payload.email.to_lowercase())
-    .fetch_optional(&state.db)
-    .await?;
+    let user = sqlx::query_as::<_, UserResponse>("SELECT id, email FROM users WHERE email = $1")
+        .bind(payload.email.to_lowercase())
+        .fetch_optional(&state.db)
+        .await?;
 
     let Some(user) = user else {
         return Ok(());
@@ -405,7 +403,9 @@ mod tests {
         };
 
         let result = validate_register_payload(&payload);
-        assert!(matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("letters and numbers")));
+        assert!(
+            matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("letters and numbers"))
+        );
     }
 
     #[test]

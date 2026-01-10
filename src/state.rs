@@ -91,8 +91,8 @@ impl AppState {
             10,
         )?;
 
-        let refresh_cookie_name = std::env::var("REFRESH_COOKIE_NAME")
-            .unwrap_or_else(|_| "todo_refresh".to_string());
+        let refresh_cookie_name =
+            std::env::var("REFRESH_COOKIE_NAME").unwrap_or_else(|_| "todo_refresh".to_string());
         let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
         let refresh_cookie_secure = parse_bool(
             "REFRESH_COOKIE_SECURE",

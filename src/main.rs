@@ -1,4 +1,8 @@
-use std::{net::SocketAddr, path::{Path, PathBuf}, sync::Arc};
+use std::{
+    net::SocketAddr,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use axum::http::{HeaderValue, Method, header};
 use axum::{Router, routing::get};
