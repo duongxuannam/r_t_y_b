@@ -2,7 +2,7 @@ use std::num::NonZeroU32;
 
 use todo_api::{
     error::AppError,
-    models::auth::{LoginRequest, RefreshRequest, RegisterRequest},
+    models::auth::{LoginRequest, RegisterRequest},
     services::auth_service,
     state::{AppState, EmailConfig, JwtConfig},
 };
@@ -56,6 +56,8 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
         cors_allowed_origins: Vec::new(),
         rate_limit_per_second: NonZeroU32::new(10).unwrap(),
         rate_limit_burst: NonZeroU32::new(20).unwrap(),
+        refresh_cookie_name: "todo_refresh".into(),
+        refresh_cookie_secure: false,
     };
 
     let email = format!("user+{}@example.com", Uuid::new_v4());
@@ -70,9 +72,10 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
     )
     .await?;
 
+    let (register_response, register_refresh_token) = register_response;
     assert_eq!(register_response.user.email, email);
     assert!(!register_response.access_token.is_empty());
-    assert!(!register_response.refresh_token.is_empty());
+    assert!(!register_refresh_token.is_empty());
 
     let login_response = auth_service::login(
         &state,
@@ -83,37 +86,21 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
     )
     .await?;
 
+    let (login_response, login_refresh_token) = login_response;
     assert_eq!(login_response.user.email, email);
     assert!(!login_response.access_token.is_empty());
-    assert!(!login_response.refresh_token.is_empty());
+    assert!(!login_refresh_token.is_empty());
 
-    let refreshed = auth_service::refresh(
-        &state,
-        RefreshRequest {
-            refresh_token: login_response.refresh_token.clone(),
-        },
-    )
-    .await?;
+    let refreshed = auth_service::refresh(&state, &login_refresh_token).await?;
 
+    let (refreshed, refreshed_token) = refreshed;
     assert_eq!(refreshed.user.email, email);
     assert_ne!(refreshed.access_token, login_response.access_token);
-    assert_ne!(refreshed.refresh_token, login_response.refresh_token);
+    assert_ne!(refreshed_token, login_refresh_token);
 
-    auth_service::logout(
-        &state,
-        RefreshRequest {
-            refresh_token: refreshed.refresh_token.clone(),
-        },
-    )
-    .await?;
+    auth_service::logout(&state, &refreshed_token).await?;
 
-    let reuse_after_logout = auth_service::refresh(
-        &state,
-        RefreshRequest {
-            refresh_token: refreshed.refresh_token,
-        },
-    )
-    .await;
+    let reuse_after_logout = auth_service::refresh(&state, &refreshed_token).await;
 
     assert!(matches!(reuse_after_logout, Err(AppError::Unauthorized)));
 
