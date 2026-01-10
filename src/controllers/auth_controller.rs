@@ -155,7 +155,7 @@ fn build_refresh_cookie(state: &AppState, refresh_token: String) -> Cookie<'stat
     if state.refresh_cookie_secure {
         builder = builder.secure(true);
     }
-    builder.finish()
+    builder.build()
 }
 
 fn clear_refresh_cookie(state: &AppState) -> Cookie<'static> {
@@ -167,7 +167,7 @@ fn clear_refresh_cookie(state: &AppState) -> Cookie<'static> {
     if state.refresh_cookie_secure {
         builder = builder.secure(true);
     }
-    builder.finish()
+    builder.build()
 }
 
 fn extract_refresh_token(
@@ -176,9 +176,9 @@ fn extract_refresh_token(
     payload: Option<Json<RefreshRequest>>,
 ) -> Result<String, AppError> {
     if let Some(payload) = payload {
-        if let Some(token) = payload.refresh_token {
+        if let Some(token) = payload.refresh_token.as_deref() {
             if !token.trim().is_empty() {
-                return Ok(token);
+                return Ok(token.to_string());
             }
         }
     }
