@@ -83,12 +83,12 @@ impl AppState {
         let rate_limit_per_second = parse_non_zero(
             "RATE_LIMIT_PER_SECOND",
             std::env::var("RATE_LIMIT_PER_SECOND").ok(),
-            5,
+            20,
         )?;
         let rate_limit_burst = parse_non_zero(
             "RATE_LIMIT_BURST",
             std::env::var("RATE_LIMIT_BURST").ok(),
-            10,
+            40,
         )?;
 
         let refresh_cookie_name =

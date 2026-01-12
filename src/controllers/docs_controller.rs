@@ -32,6 +32,9 @@ pub async fn scalar_ui() -> Html<String> {
 
 pub fn routes(openapi: utoipa::openapi::OpenApi) -> Router<AppState> {
     Router::new()
-        .route("/docs/scalar", axum::routing::get(scalar_ui))
-        .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", openapi))
+        .route("/api/docs/scalar", axum::routing::get(scalar_ui))
+        .merge(SwaggerUi::new("/api/docs").url("/api-doc/openapi.json", openapi))
 }
+
+
+

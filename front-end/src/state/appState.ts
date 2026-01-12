@@ -33,6 +33,10 @@ const normalizeTheme = (value: string | null | undefined): ThemeId =>
 
 export const appState = observable({
   theme: 'light' as ThemeId,
+  app: {
+    headerHidden: false,
+    drawerOpen: false
+  },
   auth: {
     accessToken: '',
     user: {
@@ -66,5 +70,14 @@ export const themeActions = {
     const normalized = normalizeTheme(theme)
     appState.theme.set(normalized)
     writeStorage(storageKeys.theme, normalized)
+  },
+}
+
+export const appActions = {
+  setHeaderHidden(hidden: boolean) {
+    appState.app.headerHidden.set(hidden)
+  },
+  setDrawerOpen(open: boolean) {
+    appState.app.drawerOpen.set(open)
   },
 }

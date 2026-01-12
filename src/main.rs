@@ -61,6 +61,7 @@ mod state;
         error::ErrorResponse,
         controllers::health_controller::HealthResponse
     )),
+    servers((url = "/api", description = "API base")),
     tags(
         (name = "auth", description = "Authentication"),
         (name = "todos", description = "Todo management"),
@@ -110,8 +111,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
     let metrics_route_handle = metric_handle.clone();
-
     let static_service = build_static_service();
+
+    let openapi = ApiDoc::openapi();
 
     let api = Router::new()
         .route("/health", get(health_controller::health_check))
@@ -120,11 +122,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(move || async move { metrics_route_handle.render() }),
         )
         .merge(auth_controller::routes())
-        .merge(todo_controller::routes())
-        .merge(docs_controller::routes(ApiDoc::openapi()));
+        .merge(todo_controller::routes());
 
     let app = Router::new()
         .nest("/api", api)
+        .merge(docs_controller::routes(openapi.clone()))
         .fallback_service(static_service)
         .layer(GovernorLayer {
             config: governor_conf.clone(),
