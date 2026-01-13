@@ -35,6 +35,3 @@ pub fn routes(openapi: utoipa::openapi::OpenApi) -> Router<AppState> {
         .route("/api/docs/scalar", axum::routing::get(scalar_ui))
         .merge(SwaggerUi::new("/api/docs").url("/api-doc/openapi.json", openapi))
 }
-
-
-
