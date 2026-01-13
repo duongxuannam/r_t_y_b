@@ -20,6 +20,7 @@ RUN useradd -r -u 10001 appuser
 
 COPY --from=builder /app/target/release/todo_api /app/todo_api
 COPY --from=builder /app/migrations /app/migrations
+COPY dist /app/dist
 
 ENV BIND_ADDR=0.0.0.0:3000
 

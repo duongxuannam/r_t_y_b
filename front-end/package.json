@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build-for-be": "npm run build && node -e \"const fs=require('fs');const path=require('path');const src=path.resolve(__dirname,'dist');const dest=path.resolve(__dirname,'..','dist');fs.rmSync(dest,{recursive:true,force:true});fs.mkdirSync(dest,{recursive:true});fs.cpSync(src,dest,{recursive:true});\"",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "test": "vitest",

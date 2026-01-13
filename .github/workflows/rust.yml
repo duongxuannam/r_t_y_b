@@ -15,6 +15,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: front-end/package-lock.json
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@1.88.0
         with:
@@ -29,6 +35,11 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Format
         run: cargo fmt --all -- --check
+      - name: Build frontend for backend
+        working-directory: front-end
+        run: |
+          npm ci
+          npm run build-for-be
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Build

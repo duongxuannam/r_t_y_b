@@ -175,9 +175,9 @@ fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
 }
 
 fn build_static_service() -> ServeDir<ServeFile> {
-    let dist_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("front-end")
-        .join("dist");
+    let dist_dir = std::env::var("STATIC_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join("dist"));
     let index_file = dist_dir.join("index.html");
     ServeDir::new(dist_dir).fallback(ServeFile::new(index_file))
 }
