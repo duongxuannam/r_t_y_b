@@ -53,4 +53,3 @@ databases:
   - name: todo-api-db
     plan: free
     databaseName: todo_api
-    user: postgres
