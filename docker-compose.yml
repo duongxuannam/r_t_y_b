@@ -2,12 +2,12 @@ services:
   app:
     build: .
     environment:
-      APP_ENV: development
+      APP_ENV: production
       BIND_ADDR: 0.0.0.0:3000
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/todo_api
       STATIC_DIR: /app/dist
     env_file:
-      - .env
+      - .env.production
     ports:
       - "3000:3000"
     depends_on:
