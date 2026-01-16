@@ -1,7 +1,8 @@
 services:
   - type: web
     name: todo-api
-    env: docker
+    env: image
+    image: ghcr.io/duongxuannam/r_t_y_b:latest
     plan: free
     autoDeploy: true
     healthCheckPath: /api/health
