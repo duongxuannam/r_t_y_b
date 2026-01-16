@@ -46,6 +46,21 @@ location / {
 }
 ```
 
+## VPS deployment (Docker Compose + GHCR)
+This repo includes a sample Compose file for VPS deployments that expects an `IMAGE_REF`
+variable pointing to the immutable image tag (commit SHA). Copy it to your server and
+adjust paths as needed:
+
+```bash
+mkdir -p /opt/todo-api
+cp deploy/docker-compose.vps.yml /opt/todo-api/docker-compose.yml
+cp .env.example /opt/todo-api/.env
+```
+
+The GitHub Actions workflow deploys by setting `IMAGE_REF` in `/opt/todo-api/.env` and
+running `docker compose pull` + `up -d`. Ensure your VPS has Docker + Compose installed
+and that the `.env` file includes required variables (database, JWT, SMTP, etc.).
+
 ## Example
 ```bash
 curl -X POST http://127.0.0.1:3000/auth/register \
