@@ -1,6 +1,7 @@
 import { Computed, observer } from '@legendapp/state/react'
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import ThemeToggle from './components/ThemeToggle'
 import { Badge } from './components/ui/badge'
 import { buttonVariants } from './components/ui/button-variants'
@@ -19,6 +20,7 @@ const App = observer(() => {
   const theme = appState.theme.get()
   const authUser = appState.auth.user.get()
   const isAuthed = appState.auth.accessToken.get().length > 0
+  const queryClient = useQueryClient()
 
 
   useEffect(() => {
@@ -65,6 +67,8 @@ const App = observer(() => {
       // Ignore logout failures; local state will be cleared.
     }
     authActions.logout()
+    queryClient.setQueryData(['todos'], [])
+    queryClient.removeQueries({ queryKey: ['todos'] })
   }
 
   return (
