@@ -16,6 +16,12 @@ Axum + PostgreSQL todo API with JWT auth and Swagger docs.
 cargo run
 ```
 
+## CI keywords
+This repository uses explicit commit/PR keywords to run CI and deployments:
+
+- `[run-ci]` triggers the main CI workflow (lint/test/build) and Docker build on pushes.
+- `[run-ci-vps]` triggers the VPS deploy workflow on pushes.
+
 ## Swagger
 Open http://127.0.0.1:3000/docs
 
