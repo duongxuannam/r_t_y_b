@@ -31,6 +31,12 @@ type ThemeId = (typeof allowedThemes)[number]
 const normalizeTheme = (value: string | null | undefined): ThemeId =>
   allowedThemes.includes(value as ThemeId) ? (value as ThemeId) : 'light'
 
+const detectSystemTheme = (): ThemeId => {
+  if (typeof window === 'undefined') return 'light'
+  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
+  return prefersDark ? 'dark' : 'light'
+}
+
 export const appState = observable({
   theme: 'light' as ThemeId,
   app: {
@@ -60,10 +66,18 @@ export const authActions = {
 export const themeActions = {
   hydrate() {
     const stored = readStorage<string>(storageKeys.theme)
-    const normalized = normalizeTheme(stored)
-    appState.theme.set(normalized)
-    if (stored !== normalized) {
-      writeStorage(storageKeys.theme, normalized)
+    if (stored && allowedThemes.includes(stored as ThemeId)) {
+      const normalized = normalizeTheme(stored)
+      appState.theme.set(normalized)
+      if (stored !== normalized) {
+        writeStorage(storageKeys.theme, normalized)
+      }
+      return
+    }
+    const detected = detectSystemTheme()
+    appState.theme.set(detected)
+    if (stored) {
+      writeStorage(storageKeys.theme, detected)
     }
   },
   setTheme(theme: string) {
