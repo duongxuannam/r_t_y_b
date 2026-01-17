@@ -67,8 +67,7 @@ const App = observer(() => {
       // Ignore logout failures; local state will be cleared.
     }
     authActions.logout()
-    queryClient.setQueryData(['todos'], [])
-    queryClient.removeQueries({ queryKey: ['todos'] })
+    queryClient.removeQueries({ queryKey: ['todos'], exact: true })
   }
 
   return (
