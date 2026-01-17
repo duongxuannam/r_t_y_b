@@ -11,6 +11,12 @@ env:
 
 jobs:
   lint-test:
+    if: >-
+      (github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[run-ci]')) ||
+      (github.event_name == 'pull_request' &&
+      (contains(github.event.pull_request.title, '[run-ci]') ||
+      contains(github.event.pull_request.body, '[run-ci]')))
     runs-on: ubuntu-latest
 
     steps:
@@ -49,7 +55,9 @@ jobs:
 
   docker:
     needs: lint-test
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[run-ci]')
     runs-on: ubuntu-latest
     permissions:
       contents: read
