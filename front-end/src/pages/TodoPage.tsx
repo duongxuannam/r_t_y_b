@@ -87,7 +87,7 @@ const TodoPage = observer(() => {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-      <div className="p-5 glass-panel fade-up sm:p-6">
+      <div className="p-5 pb-28 glass-panel fade-up sm:p-6 sm:pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold font-display sm:text-3xl">Todo Control</h1>
@@ -180,7 +180,7 @@ const TodoPage = observer(() => {
           </div>
         )}
 
-        <div className="mt-6 sm:hidden">
+        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 sm:hidden">
           <Button
             className="w-full shadow-glow"
             onClick={() => setIsCreateOpen(true)}
