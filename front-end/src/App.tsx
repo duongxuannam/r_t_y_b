@@ -2,32 +2,50 @@ import { Computed, observer } from '@legendapp/state/react'
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { Globe } from 'lucide-react'
 import ThemeToggle from './components/ThemeToggle'
 import { Badge } from './components/ui/badge'
 import { buttonVariants } from './components/ui/button-variants'
 import { MessageHost } from './components/ui/message-host'
+import { t, getNextLanguage } from './lib/i18n'
+import type { TranslationKey } from './lib/i18n'
 import { cn } from './lib/utils'
 import { api } from './services/api'
-import { appActions, appState, authActions, themeOptions } from './state/appState'
+import { appActions, appState, authActions, languageActions, themeOptions } from './state/appState'
 
-const routes = [
-  { to: '/app', label: 'Main App' },
-  { to: '/about', label: 'About' },
-  { to: '/auth', label: 'Auth' },
+const routes: Array<{ to: string; labelKey: TranslationKey }> = [
+  { to: '/app', labelKey: 'nav.mainApp' },
+  { to: '/about', labelKey: 'nav.about' },
+  { to: '/auth', labelKey: 'nav.auth' },
 ]
 
 const App = observer(() => {
   const theme = appState.theme.get()
+  const language = appState.language.get()
   const authUser = appState.auth.user.get()
   const isAuthed = appState.auth.accessToken.get().length > 0
   const queryClient = useQueryClient()
-
+  const nextLanguage = getNextLanguage(language)
+  const currentLanguageLabel = language === 'en' ? t('language.english') : t('language.vietnamese')
+  const languageSwitchLabel =
+    nextLanguage === 'en' ? t('language.switchToEnglish') : t('language.switchToVietnamese')
+  const mobileLanguageLabel = `${t('language.label')}: ${currentLanguageLabel}`
+  const localizedThemeOptions = themeOptions.map((option) => ({
+    ...option,
+    label: option.id === 'light' ? t('theme.light') : t('theme.dark'),
+  }))
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', theme)
     }
   }, [theme])
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', language)
+    }
+  }, [language])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -57,8 +75,6 @@ const App = observer(() => {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-
 
   const handleLogout = async () => {
     try {
@@ -97,14 +113,14 @@ const App = observer(() => {
                         return <button
                           className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'sm:hidden')}
                           type="button"
-                          aria-label="Open menu"
+                          aria-label={t('header.openMenu')}
                           aria-expanded={drawerOpen}
                           onClick={() => {
                             appActions.setDrawerOpen(true)
                             appActions.setHeaderHidden(false)
                           }}
                         >
-                          Menu
+                          {t('header.menu')}
                         </button>
                       }}
                     </Computed>
@@ -123,11 +139,20 @@ const App = observer(() => {
                           )
                         }
                       >
-                        {link.label}
+                        {t(link.labelKey)}
                       </NavLink>
                     ))}
                     <div className="flex items-center gap-2 ml-1">
-                      <ThemeToggle options={themeOptions} value={theme} />
+                      <button
+                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+                        type="button"
+                        aria-label={languageSwitchLabel}
+                        title={languageSwitchLabel}
+                        onClick={() => languageActions.toggleLanguage()}
+                      >
+                        <Globe className="w-4 h-4" />
+                      </button>
+                      <ThemeToggle options={localizedThemeOptions} value={theme} />
                       {isAuthed ? (
                         <div className="flex items-center gap-2">
                           <div className="max-w-[140px] truncate text-xs text-muted-foreground sm:max-w-none">
@@ -137,11 +162,11 @@ const App = observer(() => {
                             className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                             onClick={handleLogout}
                           >
-                            Logout
+                            {t('header.logout')}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Guest</span>
+                        <span className="text-xs text-muted-foreground">{t('header.guest')}</span>
                       )}
                     </div>
                   </div>
@@ -160,19 +185,19 @@ const App = observer(() => {
                 <div className="fixed inset-0 z-[60] sm:hidden" role="dialog" aria-modal="true">
                   <button
                     className="absolute inset-0 bg-slate-950/30"
-                    aria-label="Close menu"
+                    aria-label={t('header.closeMenu')}
                     type="button"
                     onClick={() => appActions.setDrawerOpen(false)}
                   />
                   <div className="absolute right-4 top-6 w-[calc(100%-2rem)] rounded-3xl border border-white/30 bg-background/95 p-4 shadow-2xl backdrop-blur sm:hidden">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">Navigate</span>
+                      <span className="text-sm font-semibold">{t('header.navigate')}</span>
                       <button
                         className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                         type="button"
                         onClick={() => appActions.setDrawerOpen(false)}
                       >
-                        Close
+                        {t('header.close')}
                       </button>
                     </div>
                     <div className="grid gap-2 mt-3">
@@ -191,14 +216,26 @@ const App = observer(() => {
                             )
                           }
                         >
-                          {link.label}
+                          {t(link.labelKey)}
                         </NavLink>
                       ))}
+                      <button
+                        className={cn(
+                          buttonVariants({ variant: 'ghost', size: 'sm' }),
+                          'justify-start',
+                        )}
+                        type="button"
+                        onClick={() => languageActions.toggleLanguage()}
+                      >
+                        {mobileLanguageLabel}
+                      </button>
                     </div>
                     <div className="flex flex-col gap-3 mt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Theme</span>
-                        <ThemeToggle options={themeOptions} value={theme} />
+                        <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                          {t('header.theme')}
+                        </span>
+                        <ThemeToggle options={localizedThemeOptions} value={theme} />
                       </div>
                       {isAuthed ? (
                         <div className="flex items-center justify-between gap-2">
@@ -212,11 +249,11 @@ const App = observer(() => {
                               appActions.setDrawerOpen(false)
                             }}
                           >
-                            Logout
+                            {t('header.logout')}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Guest mode</span>
+                        <span className="text-xs text-muted-foreground">{t('header.guestMode')}</span>
                       )}
                     </div>
                   </div>

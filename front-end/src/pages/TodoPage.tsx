@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Skeleton } from '../components/ui/skeleton'
 import { message } from '../components/ui/message'
+import { t } from '../lib/i18n'
 
 const TodoPage = observer(() => {
   const todoForm = useObservable({ title: '' })
@@ -31,7 +32,7 @@ const TodoPage = observer(() => {
 
   useEffect(() => {
     if (listQuery.isError) {
-      const errorMessage = (listQuery.error as Error).message || 'Unable to load todos.'
+      const errorMessage = (listQuery.error as Error).message || t('errors.unableToLoadTodos')
       if (lastErrorRef.current.list !== errorMessage) {
         lastErrorRef.current.list = errorMessage
         message.error(errorMessage)
@@ -41,7 +42,7 @@ const TodoPage = observer(() => {
 
   useEffect(() => {
     if (createMutation.isError) {
-      const errorMessage = (createMutation.error as Error)?.message || 'Request failed.'
+      const errorMessage = (createMutation.error as Error)?.message || t('errors.requestFailed')
       if (lastErrorRef.current.create !== errorMessage) {
         lastErrorRef.current.create = errorMessage
         message.error(errorMessage)
@@ -51,7 +52,7 @@ const TodoPage = observer(() => {
 
   useEffect(() => {
     if (updateMutation.isError) {
-      const errorMessage = (updateMutation.error as Error)?.message || 'Request failed.'
+      const errorMessage = (updateMutation.error as Error)?.message || t('errors.requestFailed')
       if (lastErrorRef.current.update !== errorMessage) {
         lastErrorRef.current.update = errorMessage
         message.error(errorMessage)
@@ -61,7 +62,7 @@ const TodoPage = observer(() => {
 
   useEffect(() => {
     if (deleteMutation.isError) {
-      const errorMessage = (deleteMutation.error as Error)?.message || 'Request failed.'
+      const errorMessage = (deleteMutation.error as Error)?.message || t('errors.requestFailed')
       if (lastErrorRef.current.delete !== errorMessage) {
         lastErrorRef.current.delete = errorMessage
         message.error(errorMessage)
@@ -90,18 +91,18 @@ const TodoPage = observer(() => {
       <div className="p-5 pb-28 glass-panel fade-up sm:p-6 sm:pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold font-display sm:text-3xl">Todo Control</h1>
+            <h1 className="text-2xl font-semibold font-display sm:text-3xl">{t('todo.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              Track tasks synced with the Rust API.
+              {t('todo.subtitle')}
             </p>
           </div>
           <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
             <div className="rounded-2xl border bg-card/80 p-3 text-center shadow-sm">
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Total</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('todo.total')}</div>
               <div className="text-xl font-semibold sm:text-2xl">{todos.length}</div>
             </div>
             <div className="rounded-2xl border bg-card/80 p-3 text-center shadow-sm">
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Completed</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('todo.completed')}</div>
               <div className="text-xl font-semibold sm:text-2xl">
                 {todos.filter((todo) => todo.completed).length}
               </div>
@@ -113,9 +114,9 @@ const TodoPage = observer(() => {
           <Alert variant="warning" className="mt-6">
             <AlertTriangle className="h-4 w-4" />
             <div>
-              <AlertTitle>Login required</AlertTitle>
+              <AlertTitle>{t('todo.loginRequired')}</AlertTitle>
               <AlertDescription>
-                Please login first to sync todos with the API.
+                {t('todo.loginRequiredDescription')}
               </AlertDescription>
             </div>
           </Alert>
@@ -134,7 +135,7 @@ const TodoPage = observer(() => {
           <div className="mt-6 space-y-3">
             {todos.length === 0 ? (
               <div className="p-6 text-sm text-center border border-dashed rounded-2xl border-border">
-                No todos yet. Add one to get started.
+                {t('todo.empty')}
               </div>
             ) : (
               todos.map((todo) => (
@@ -162,7 +163,7 @@ const TodoPage = observer(() => {
                         {todo.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Updated {new Date(todo.updated_at).toLocaleString()}
+                        {t('todo.updated')} {new Date(todo.updated_at).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -172,7 +173,7 @@ const TodoPage = observer(() => {
                     className="self-start text-destructive sm:self-auto"
                     onClick={() => deleteMutation.mutate(todo.id)}
                   >
-                    Delete
+                    {t('todo.delete')}
                   </Button>
                 </div>
               ))
@@ -185,20 +186,20 @@ const TodoPage = observer(() => {
             className="w-full shadow-glow"
             onClick={() => setIsCreateOpen(true)}
           >
-            Create todo
+            {t('todo.create')}
           </Button>
         </div>
       </div>
 
       <div className="hidden p-5 glass-panel fade-up fade-delay-1 sm:block sm:p-6">
-        <h2 className="text-xl font-semibold font-display sm:text-2xl">Create todo</h2>
+        <h2 className="text-xl font-semibold font-display sm:text-2xl">{t('todo.create')}</h2>
         <p className="text-sm text-muted-foreground">
-          Add a new task to your personal list.
+          {t('todo.createSubtitle')}
         </p>
         <div className="mt-4 space-y-3">
           <Input
             type="text"
-            placeholder="Todo title"
+            placeholder={t('todo.titlePlaceholder')}
             value={todoForm.title.get()}
             onChange={(event) => todoForm.title.set(event.target.value)}
           />
@@ -208,11 +209,11 @@ const TodoPage = observer(() => {
             onClick={handleCreate}
             disabled={!isAuthed || createMutation.isPending}
           >
-            {createMutation.isPending ? 'Saving...' : 'Add todo'}
+            {createMutation.isPending ? t('todo.saving') : t('todo.add')}
           </Button>
           {!isAuthed && (
             <p className="text-xs text-muted-foreground">
-              Login required before creating tasks.
+              {t('todo.loginBeforeCreate')}
             </p>
           )}
           {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && null}
@@ -224,7 +225,7 @@ const TodoPage = observer(() => {
           <button
             className="absolute inset-0 cursor-default"
             onClick={() => setIsCreateOpen(false)}
-            aria-label="Close create todo modal"
+            aria-label={t('todo.closeCreateModal')}
           />
           <div
             className="glass-panel relative z-10 mx-4 w-full max-w-sm p-5 shadow-2xl"
@@ -232,24 +233,24 @@ const TodoPage = observer(() => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold font-display">Create todo</h2>
+                <h2 className="text-lg font-semibold font-display">{t('todo.create')}</h2>
                 <p className="text-xs text-muted-foreground">
-                  Add a new task to your personal list.
+                  {t('todo.createSubtitle')}
                 </p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsCreateOpen(false)}
-                aria-label="Close"
+                aria-label={t('todo.close')}
               >
-                Close
+                {t('todo.close')}
               </Button>
             </div>
             <div className="mt-4 space-y-3">
               <Input
                 type="text"
-                placeholder="Todo title"
+                placeholder={t('todo.titlePlaceholder')}
                 value={todoForm.title.get()}
                 onChange={(event) => todoForm.title.set(event.target.value)}
               />
@@ -259,11 +260,11 @@ const TodoPage = observer(() => {
                 onClick={handleCreate}
                 disabled={!isAuthed || createMutation.isPending}
               >
-                {createMutation.isPending ? 'Saving...' : 'Add todo'}
+                {createMutation.isPending ? t('todo.saving') : t('todo.add')}
               </Button>
               {!isAuthed && (
                 <p className="text-xs text-muted-foreground">
-                  Login required before creating tasks.
+                  {t('todo.loginBeforeCreate')}
                 </p>
               )}
               {(createMutation.isError || updateMutation.isError || deleteMutation.isError) && null}
