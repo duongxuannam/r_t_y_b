@@ -1,20 +1,20 @@
 import { Badge } from '../components/ui/badge'
+import { t } from '../lib/i18n'
 
 const AboutPage = () => {
   return (
     <section className="grid gap-6 lg:grid-cols-2">
       <div className="p-6 glass-panel fade-up">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Overview</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('about.overview')}</p>
         <h1 className="mt-2 text-3xl font-semibold font-display">
-          A modern dashboard for the Rust Todo API
+          {t('about.title')}
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          This UI now uses shadcn/ui components on top of Tailwind, paired with
-          Legend State for local state and TanStack Query for server data.
+          {t('about.description')}
         </p>
       </div>
       <div className="p-6 glass-panel fade-up fade-delay-1">
-        <h2 className="text-2xl font-semibold font-display">Tech highlights</h2>
+        <h2 className="text-2xl font-semibold font-display">{t('about.highlights')}</h2>
         <div className="grid gap-3 mt-4 text-sm text-muted-foreground">
           <div className="grid items-start gap-3" style={{ gridTemplateColumns: '130px 1fr' }}>
             <div className='flex'>
@@ -25,7 +25,7 @@ const AboutPage = () => {
                 Legend State
               </Badge>
             </div>
-            <p className="pt-[2px]">Reactive global store for auth + theme.</p>
+            <p className="pt-[2px]">{t('about.legendState')}</p>
           </div>
           <div className="grid items-start gap-3" style={{ gridTemplateColumns: '130px 1fr' }}>
             <div className='flex'>
@@ -36,7 +36,7 @@ const AboutPage = () => {
                 TanStack Query
               </Badge>
             </div>
-            <p className="pt-[2px]">Query caching + mutations for todos.</p>
+            <p className="pt-[2px]">{t('about.tanstack')}</p>
           </div>
           <div className="grid items-start gap-3" style={{ gridTemplateColumns: '130px 1fr' }}>
             <div className='flex'>
@@ -48,7 +48,7 @@ const AboutPage = () => {
               </Badge>
             </div>
             <p className="pt-[2px]">
-              Reusable components with a clean, modern Tailwind foundation.
+              {t('about.shadcn')}
             </p>
           </div>
         </div>
