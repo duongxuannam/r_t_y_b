@@ -5,7 +5,7 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './app/routes'
 import './index.css'
 import { api } from './services/api'
-import { authActions, themeActions } from './state/appState'
+import { authActions, languageActions, themeActions } from './state/appState'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +17,7 @@ const queryClient = new QueryClient({
 })
 
 themeActions.hydrate()
+languageActions.hydrate()
 
 const refreshOnLoad = async () => {
   try {
