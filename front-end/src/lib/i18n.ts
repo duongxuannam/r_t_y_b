@@ -1,4 +1,5 @@
-import { appState, LanguageId } from '../state/appState'
+import { appState } from '../state/appState'
+import type { LanguageId } from '../state/appState'
 
 const translations = {
   en: {
