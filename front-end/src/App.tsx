@@ -8,6 +8,7 @@ import { Badge } from './components/ui/badge'
 import { buttonVariants } from './components/ui/button-variants'
 import { MessageHost } from './components/ui/message-host'
 import { t, getNextLanguage } from './lib/i18n'
+import type { TranslationKey } from './lib/i18n'
 import { cn } from './lib/utils'
 import { api } from './services/api'
 import { appActions, appState, authActions, languageActions, themeOptions } from './state/appState'
@@ -16,7 +17,7 @@ const routes = [
   { to: '/app', labelKey: 'nav.mainApp' },
   { to: '/about', labelKey: 'nav.about' },
   { to: '/auth', labelKey: 'nav.auth' },
-]
+] as const satisfies ReadonlyArray<{ to: string; labelKey: TranslationKey }>
 
 const App = observer(() => {
   const theme = appState.theme.get()

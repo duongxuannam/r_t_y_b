@@ -95,8 +95,8 @@ const AuthPage = observer(() => {
   }
 
   return (
-    <section className="grid gap-6 lg:flex lg:items-stretch lg:gap-8">
-      <div className="relative flex flex-col fade-up lg:w-[1.15fr]">
+    <section className="grid gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+      <div className="relative flex flex-col fade-up">
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -top-8 -left-6 bg-primary/15 blur-2xl sm:block" />
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -bottom-10 right-8 bg-secondary/15 blur-2xl sm:block" />
         <div className="relative flex h-full flex-col overflow-hidden glass-panel p-6 sm:p-8">
@@ -269,7 +269,7 @@ const AuthPage = observer(() => {
         </div>
       </div>
 
-      <div className="glass-panel flex h-full flex-col p-6 fade-up fade-delay-1 sm:p-8 lg:w-[0.85fr]">
+      <div className="glass-panel flex h-full flex-col p-6 fade-up fade-delay-1 sm:p-8">
         <h2 className="text-xl font-semibold font-display sm:text-2xl">{t('auth.checklist')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {t('auth.checklistSubtitle')}
