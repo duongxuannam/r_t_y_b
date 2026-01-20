@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let database_url = std::env::var("DATABASE_URL")?;
+    let database_url: String = std::env::var("DATABASE_URL")?;
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)

@@ -1,13 +1,13 @@
 import { Computed, observer } from '@legendapp/state/react'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Globe } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import ThemeToggle from './components/ThemeToggle'
 import { Badge } from './components/ui/badge'
 import { buttonVariants } from './components/ui/button-variants'
 import { MessageHost } from './components/ui/message-host'
-import { t, getNextLanguage } from './lib/i18n'
+import { t } from './lib/i18n'
 import type { TranslationKey } from './lib/i18n'
 import { cn } from './lib/utils'
 import { api } from './services/api'
@@ -19,17 +19,90 @@ const routes = [
   { to: '/auth', labelKey: 'nav.auth' },
 ] as const satisfies ReadonlyArray<{ to: string; labelKey: TranslationKey }>
 
+const LanguageMenu = ({
+  buttonClassName,
+  menuClassName,
+}: {
+  buttonClassName?: string
+  menuClassName?: string
+}) => {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const language = appState.language.get()
+  const currentCode = language.toUpperCase()
+  const options: Array<{ id: 'en' | 'vi'; label: string }> = [
+    { id: 'en', label: t('language.english') },
+    { id: 'vi', label: t('language.vietnamese') },
+  ]
+
+  useEffect(() => {
+    if (!open) return undefined
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handleClickOutside)
+    return () => window.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
+          'flex items-center gap-2 text-xs font-semibold tracking-[0.2em]',
+          buttonClassName,
+        )}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        title={t('language.label')}
+      >
+        <span className="inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded-full border border-border bg-card/80 px-2">
+          {currentCode}
+        </span>
+        <ChevronDown className="h-4 w-4 opacity-70" />
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className={cn(
+            'absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-border/70 bg-background/95 shadow-lg backdrop-blur',
+            menuClassName,
+          )}
+        >
+          {options.map((option) => (
+            <button
+              key={option.id}
+              role="menuitem"
+              className={cn(
+                'flex w-full items-center justify-between px-3 py-2 text-sm transition hover:bg-accent/60',
+                language === option.id ? 'text-foreground' : 'text-muted-foreground',
+              )}
+              type="button"
+              onClick={() => {
+                languageActions.setLanguage(option.id)
+                setOpen(false)
+              }}
+            >
+              <span>{option.label}</span>
+              <span className="text-xs font-semibold tracking-[0.2em]">{option.id.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 const App = observer(() => {
   const theme = appState.theme.get()
   const language = appState.language.get()
   const authUser = appState.auth.user.get()
   const isAuthed = appState.auth.accessToken.get().length > 0
   const queryClient = useQueryClient()
-  const nextLanguage = getNextLanguage(language)
-  const currentLanguageLabel = language === 'en' ? t('language.english') : t('language.vietnamese')
-  const languageSwitchLabel =
-    nextLanguage === 'en' ? t('language.switchToEnglish') : t('language.switchToVietnamese')
-  const mobileLanguageLabel = `${t('language.label')}: ${currentLanguageLabel}`
   const localizedThemeOptions = themeOptions.map((option) => ({
     ...option,
     label: option.id === 'light' ? t('theme.light') : t('theme.dark'),
@@ -143,15 +216,7 @@ const App = observer(() => {
                       </NavLink>
                     ))}
                     <div className="flex items-center gap-2 ml-1">
-                      <button
-                        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-                        type="button"
-                        aria-label={languageSwitchLabel}
-                        title={languageSwitchLabel}
-                        onClick={() => languageActions.toggleLanguage()}
-                      >
-                        <Globe className="w-4 h-4" />
-                      </button>
+                      <LanguageMenu />
                       <ThemeToggle options={localizedThemeOptions} value={theme} />
                       {isAuthed ? (
                         <div className="flex items-center gap-2">
@@ -219,16 +284,15 @@ const App = observer(() => {
                           {t(link.labelKey)}
                         </NavLink>
                       ))}
-                      <button
-                        className={cn(
-                          buttonVariants({ variant: 'ghost', size: 'sm' }),
-                          'justify-start',
-                        )}
-                        type="button"
-                        onClick={() => languageActions.toggleLanguage()}
-                      >
-                        {mobileLanguageLabel}
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                          {t('language.label')}
+                        </span>
+                        <LanguageMenu
+                          buttonClassName="h-8 px-2"
+                          menuClassName="right-auto left-0 mt-3 w-full"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-3 mt-4">
                       <div className="flex items-center justify-between">
