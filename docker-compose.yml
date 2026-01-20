@@ -7,7 +7,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/todo_api
       STATIC_DIR: /app/dist
     env_file:
-      - .env.production
+      - back-end/.env.production
     ports:
       - "3000:3000"
     depends_on:

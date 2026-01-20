@@ -1,0 +1,30 @@
+{
+  "name": "todo-api-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "front-end",
+    "back-end"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:fe": "cd front-end && bun run dev",
+    "dev:be": "cd back-end && cargo run",
+    "build": "turbo run build",
+    "build:fe": "cd front-end && bun run build",
+    "build:be": "cd back-end && cargo build --release",
+    "test": "turbo run test",
+    "test:fe": "cd front-end && bun run test:run",
+    "test:be": "cd back-end && cargo test",
+    "lint": "turbo run lint",
+    "lint:fe": "cd front-end && bun run lint",
+    "lint:be": "cd back-end && cargo clippy --all-targets --all-features -- -D warnings",
+    "format": "turbo run format",
+    "format:fe": "cd front-end && bun run format",
+    "format:be": "cd back-end && cargo fmt --all"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  },
+  "packageManager": "bun@1.1.34"
+}

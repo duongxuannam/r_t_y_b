@@ -10,8 +10,17 @@ React + Vite front-end for the Rust Todo API.
 ## Getting started
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
+```
+
+## Monorepo
+
+From the repo root, you can run both apps together:
+
+```bash
+bun install
+bun run dev
 ```
 
 ## Notes

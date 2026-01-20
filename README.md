@@ -1,19 +1,34 @@
-# Rust Todo API
+# Rust Todo API Monorepo
 
-Axum + PostgreSQL todo API with JWT auth and Swagger docs.
+Axum + PostgreSQL todo API with JWT auth, paired with a React front-end.
 
 ## Requirements
 - Rust toolchain
 - PostgreSQL
+- Bun (latest)
 
 ## Setup
 1) Create a database (example uses `todo_api`).
-2) Copy `.env.example` to `.env` and update values (Docker Compose exposes Postgres on `5433`).
+2) Copy `back-end/.env.example` to `back-end/.env` and update values (Docker Compose exposes Postgres on `5433`).
 3) Ensure `JWT_SECRET` is at least 32 characters. Adjust `ALLOWED_ORIGINS`, `RATE_LIMIT_PER_SECOND`, and `RATE_LIMIT_BURST` as needed.
-4) Run the server:
+4) Run the stack:
 
 ```bash
+bun install
+bun run dev
+```
+
+Or run each side directly:
+
+```bash
+cd back-end
 cargo run
+```
+
+```bash
+cd front-end
+bun install
+bun run dev
 ```
 
 ## Swagger
@@ -54,7 +69,7 @@ adjust paths as needed:
 ```bash
 mkdir -p /opt/todo-api
 cp deploy/docker-compose.vps.yml /opt/todo-api/docker-compose.yml
-cp .env.example /opt/todo-api/.env
+cp back-end/.env.example /opt/todo-api/.env
 ```
 
 The GitHub Actions workflow deploys by setting `IMAGE_REF` in `/opt/todo-api/.env` and
