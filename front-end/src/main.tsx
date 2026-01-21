@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
 import { router } from './app/routes'
 import './index.css'
 import { api } from './services/api'
@@ -33,6 +34,8 @@ const refreshOnLoad = async () => {
 }
 
 refreshOnLoad()
+
+registerSW({ immediate: true })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
