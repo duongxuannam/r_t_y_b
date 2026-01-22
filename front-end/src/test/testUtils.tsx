@@ -15,13 +15,17 @@ export const renderWithProviders = (element: ReactElement) => {
   return render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>)
 }
 
-export const renderWithRouter = (element: ReactElement, initialEntries = ['/']) => {
+export const renderWithRouter = (
+  element: ReactElement,
+  initialEntries = ['/'],
+  routePath = '*',
+) => {
   const queryClient = createTestQueryClient()
 
   const router = createMemoryRouter(
     [
       {
-        path: '/',
+        path: routePath,
         element,
       },
     ],
