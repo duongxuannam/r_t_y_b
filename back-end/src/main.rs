@@ -158,20 +158,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
-    CorsLayer::new()
-        .allow_origin(AllowOrigin::list(origins.iter().cloned()))
+    let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+    let cors = CorsLayer::new()
         .allow_methods(AllowMethods::list([
             Method::GET,
             Method::POST,
             Method::PUT,
             Method::DELETE,
+            Method::OPTIONS,
         ]))
-        .allow_headers(AllowHeaders::list([
-            header::ACCEPT,
-            header::CONTENT_TYPE,
-            header::AUTHORIZATION,
-        ]))
-        .allow_credentials(true)
+        .allow_credentials(true);
+
+    if env_mode == "production" {
+        cors.allow_origin(AllowOrigin::list(origins.iter().cloned()))
+            .allow_headers(AllowHeaders::list([
+                header::ACCEPT,
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+            ]))
+    } else {
+        cors.allow_origin(AllowOrigin::mirror_request())
+            .allow_headers(AllowHeaders::mirror_request())
+    }
 }
 
 fn build_static_service() -> ServeDir<ServeFile> {
