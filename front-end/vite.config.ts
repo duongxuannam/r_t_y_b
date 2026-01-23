@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-icon.svg'],
+      includeAssets: ['pwa-icon.svg', 'splash/*.png'],
       manifest: {
         name: 'Todo Pulse',
         short_name: 'Todo Pulse',
