@@ -290,7 +290,7 @@ const App = observer(() => {
                         </span>
                         <LanguageMenu
                           buttonClassName="h-8 px-2"
-                          menuClassName="right-auto left-0 mt-3 w-full"
+                          menuClassName="left-auto right-0 mt-3 w-40"
                         />
                       </div>
                     </div>
