@@ -142,9 +142,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(cors_layer)
         .with_state(state);
 
-    let bind_addr: SocketAddr = std::env::var("BIND_ADDR")
-        .unwrap_or_else(|_| "127.0.0.1:3000".to_string())
-        .parse()?;
+    let bind_addr: SocketAddr = match std::env::var("PORT") {
+        Ok(port) => format!("0.0.0.0:{port}").parse()?,
+        Err(_) => std::env::var("BIND_ADDR")
+            .unwrap_or_else(|_| "127.0.0.1:3000".to_string())
+            .parse()?,
+    };
 
     tracing::info!("listening on {}", bind_addr);
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;

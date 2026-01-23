@@ -10,7 +10,7 @@ services:
       - key: APP_ENV
         value: production
       - key: BIND_ADDR
-        value: 0.0.0.0:3000
+        value: 0.0.0.0:$PORT
       - key: STATIC_DIR
         value: /app/dist
       - key: DATABASE_URL
@@ -24,7 +24,7 @@ services:
       - key: REFRESH_TOKEN_TTL_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        value: https://your-frontend-domain.com
+        value: https://todo-api-zx6d.onrender.com
       - key: RATE_LIMIT_PER_SECOND
         value: "20"
       - key: RATE_LIMIT_BURST
@@ -46,7 +46,7 @@ services:
       - key: SMTP_FROM_NAME
         value: Todo App
       - key: PASSWORD_RESET_URL_BASE
-        value: https://your-frontend-domain.com
+        value: https://todo-api-zx6d.onrender.com
       - key: PASSWORD_RESET_TTL_MIN
         value: "30"
 
