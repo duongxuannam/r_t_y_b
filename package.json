@@ -13,6 +13,7 @@
     "build": "turbo run build",
     "build:fe": "cd front-end && bun run build",
     "build:be": "cd back-end && cargo build --release",
+    "clean": "bun -e \"const fs=require('fs');const path=require('path');const targets=['front-end/dist','back-end/target','front-end/.turbo','back-end/.turbo','.turbo'];for(const t of targets){fs.rmSync(path.resolve(__dirname,t),{recursive:true,force:true});}\"",
     "test": "turbo run test",
     "test:fe": "cd front-end && bun run test:run",
     "test:be": "cd back-end && cargo test",
