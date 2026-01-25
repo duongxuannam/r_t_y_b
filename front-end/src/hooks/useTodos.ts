@@ -16,8 +16,18 @@ export const useTodos = (enabled: boolean) => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: { title?: string; completed?: boolean } }) =>
-      api.updateTodo(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: { title?: string; completed?: boolean; status?: string; position?: number }
+    }) => api.updateTodo(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+  })
+
+  const reorderMutation = useMutation({
+    mutationFn: api.reorderTodos,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   })
 
@@ -30,6 +40,7 @@ export const useTodos = (enabled: boolean) => {
     listQuery,
     createMutation,
     updateMutation,
+    reorderMutation,
     deleteMutation,
   }
 }

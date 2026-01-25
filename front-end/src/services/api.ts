@@ -7,7 +7,7 @@ import type {
   RegisterRequest,
   ResetPasswordRequest,
 } from '../types/auth'
-import type { CreateTodoRequest, Todo, UpdateTodoRequest } from '../types/todo'
+import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
 const AUTH_PATHS = [
@@ -170,6 +170,12 @@ export const api = {
   },
   updateTodo(id: string, payload: UpdateTodoRequest) {
     return request<Todo>(`/todos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+  reorderTodos(payload: ReorderTodosRequest) {
+    return request<void>('/todos/reorder', {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
