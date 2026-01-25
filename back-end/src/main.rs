@@ -43,6 +43,7 @@ mod state;
         todo_controller::get_todo,
         todo_controller::update_todo,
         todo_controller::delete_todo,
+        todo_controller::reorder_todos,
         health_controller::health_check,
         docs_controller::scalar_ui
     ),
@@ -57,6 +58,8 @@ mod state;
         models::auth::MessageResponse,
         models::todo::CreateTodoRequest,
         models::todo::UpdateTodoRequest,
+        models::todo::ReorderTodosRequest,
+        models::todo::ReorderTodoItem,
         models::todo::TodoResponse,
         error::ErrorResponse,
         controllers::health_controller::HealthResponse

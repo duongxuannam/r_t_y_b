@@ -1,14 +1,14 @@
 use axum::{
     Json, Router,
     extract::{Path, State},
-    routing::get,
+    routing::{get, put},
 };
 use uuid::Uuid;
 
 use crate::{
     controllers::extractors::AuthUser,
     error::AppError,
-    models::todo::{CreateTodoRequest, TodoResponse, UpdateTodoRequest},
+    models::todo::{CreateTodoRequest, ReorderTodosRequest, TodoResponse, UpdateTodoRequest},
     services::todo_service,
     state::AppState,
 };
@@ -109,9 +109,30 @@ pub async fn delete_todo(
     Ok(axum::http::StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(
+    put,
+    path = "/todos/reorder",
+    tag = "todos",
+    request_body = ReorderTodosRequest,
+    responses(
+        (status = 204),
+        (status = 400, body = crate::error::ErrorResponse),
+        (status = 404, body = crate::error::ErrorResponse)
+    )
+)]
+pub async fn reorder_todos(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<ReorderTodosRequest>,
+) -> Result<axum::http::StatusCode, AppError> {
+    todo_service::reorder_todos(&state, user.user_id, payload).await?;
+    Ok(axum::http::StatusCode::NO_CONTENT)
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/todos", get(list_todos).post(create_todo))
+        .route("/todos/reorder", put(reorder_todos))
         .route(
             "/todos/:id",
             get(get_todo).put(update_todo).delete(delete_todo),
