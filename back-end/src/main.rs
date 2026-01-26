@@ -128,7 +128,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(todo_controller::routes());
 
     let app = Router::new()
-        .route("/api/health", get(health_controller::health_check))
         .nest("/api", api)
         .merge(docs_controller::routes(openapi.clone()))
         .fallback_service(static_service)

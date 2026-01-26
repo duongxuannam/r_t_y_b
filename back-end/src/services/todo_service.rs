@@ -121,7 +121,13 @@ pub async fn update_todo(
     let mut completed = payload.completed;
 
     if completed.is_some() && status.is_none() {
-        status = completed.map(|value| if value { "done".to_string() } else { "todo".to_string() });
+        status = completed.map(|value| {
+            if value {
+                "done".to_string()
+            } else {
+                "todo".to_string()
+            }
+        });
     }
 
     if let Some(status_value) = status.as_deref() {

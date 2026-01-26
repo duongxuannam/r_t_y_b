@@ -79,11 +79,18 @@ const TodoPage = observer(() => {
     createMutation.mutate({ title }, { onSuccess: () => todoForm.title.set('') })
   }
 
-  const handleDrop = (status: string, index: number | null) => {
-    if (!isAuthed || !draggingId || reorderMutation.isPending) return
+  const handleDrop = (status: string, index: number | null, draggedId?: string) => {
+    const activeDragId = draggedId || draggingId
+    if (!isAuthed || !activeDragId || reorderMutation.isPending) return
 
-    const sourceTodo = todos.find((todo) => todo.id === draggingId)
+    const sourceTodo = todos.find((todo) => todo.id === activeDragId)
     if (!sourceTodo) return
+    const normalizedSourceStatus = columnOrder.includes(sourceTodo.status as (typeof columnOrder)[number])
+      ? (sourceTodo.status as (typeof columnOrder)[number])
+      : 'todo'
+    const normalizedTargetStatus = columnOrder.includes(status as (typeof columnOrder)[number])
+      ? (status as (typeof columnOrder)[number])
+      : 'todo'
 
     const nextGrouped: Record<string, Todo[]> = {
       todo: [...todosByStatus.todo],
@@ -91,16 +98,16 @@ const TodoPage = observer(() => {
       done: [...todosByStatus.done],
     }
 
-    const sourceList = nextGrouped[sourceTodo.status]
-    const sourceIndex = sourceList.findIndex((todo) => todo.id === draggingId)
+    const sourceList = nextGrouped[normalizedSourceStatus]
+    const sourceIndex = sourceList.findIndex((todo) => todo.id === activeDragId)
     if (sourceIndex >= 0) {
       sourceList.splice(sourceIndex, 1)
     }
 
-    const targetList = nextGrouped[status]
+    const targetList = nextGrouped[normalizedTargetStatus]
     const insertIndex = index === null ? targetList.length : index
     const clampedIndex = Math.max(0, Math.min(insertIndex, targetList.length))
-    targetList.splice(clampedIndex, 0, { ...sourceTodo, status })
+    targetList.splice(clampedIndex, 0, { ...sourceTodo, status: normalizedTargetStatus })
 
     const items = columnOrder.flatMap((columnId) =>
       nextGrouped[columnId].map((todo, position) => ({
@@ -238,7 +245,15 @@ const TodoPage = observer(() => {
                         event.preventDefault()
                         setDropTarget({ status: column.id, index: null })
                       }}
-                      onDrop={() => handleDrop(column.id, dropTarget?.status === column.id ? dropTarget.index : null)}
+                      onDrop={(event) => {
+                        event.preventDefault()
+                        const draggedId = event.dataTransfer.getData('text/plain')
+                        handleDrop(
+                          column.id,
+                          dropTarget?.status === column.id ? dropTarget.index : null,
+                          draggedId,
+                        )
+                      }}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -282,7 +297,12 @@ const TodoPage = observer(() => {
                                   event.preventDefault()
                                   setDropTarget({ status: column.id, index })
                                 }}
-                                onDrop={() => handleDrop(column.id, index)}
+                                onDrop={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  const draggedId = event.dataTransfer.getData('text/plain')
+                                  handleDrop(column.id, index, draggedId)
+                                }}
                                 className={cn(
                                   'group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm transition',
                                   isDragging ? 'opacity-60' : 'hover:border-primary/40',
