@@ -111,7 +111,7 @@ pub async fn delete_todo(
 
 #[utoipa::path(
     put,
-    path = "/todos/reorder",
+    path = "/todos/reorder-items",
     tag = "todos",
     request_body = ReorderTodosRequest,
     responses(
@@ -125,6 +125,21 @@ pub async fn reorder_todos(
     user: AuthUser,
     Json(payload): Json<ReorderTodosRequest>,
 ) -> Result<axum::http::StatusCode, AppError> {
+    tracing::info!(
+        user_id = %user.user_id,
+        item_count = payload.items.len(),
+        "reorder todos request"
+    );
+    if payload.items.is_empty() {
+        tracing::warn!(user_id = %user.user_id, "reorder todos request had empty items");
+    }
+    if payload.items.len() > 200 {
+        tracing::warn!(
+            user_id = %user.user_id,
+            item_count = payload.items.len(),
+            "reorder todos request has a large payload"
+        );
+    }
     todo_service::reorder_todos(&state, user.user_id, payload).await?;
     Ok(axum::http::StatusCode::NO_CONTENT)
 }
@@ -132,7 +147,7 @@ pub async fn reorder_todos(
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/todos", get(list_todos).post(create_todo))
-        .route("/todos/reorder", put(reorder_todos))
+        .route("/todos/reorder-items", put(reorder_todos))
         .route(
             "/todos/:id",
             get(get_todo).put(update_todo).delete(delete_todo),

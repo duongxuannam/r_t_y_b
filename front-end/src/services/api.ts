@@ -175,7 +175,7 @@ export const api = {
     })
   },
   reorderTodos(payload: ReorderTodosRequest) {
-    return request<void>('/todos/reorder', {
+    return request<void>('/todos/reorder-items', {
       method: 'PUT',
       body: JSON.stringify(payload),
     })

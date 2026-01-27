@@ -15,9 +15,14 @@ FROM rust:1.88-bookworm AS builder
 WORKDIR /app/back-end
 
 COPY back-end/Cargo.toml back-end/Cargo.lock ./
-COPY back-end/src ./src
 COPY back-end/migrations ./migrations
 
+# Build dependencies first for better layer caching when only src changes.
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release || true
+
+# Now copy the real source and build the actual binary.
+COPY back-end/src ./src
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime

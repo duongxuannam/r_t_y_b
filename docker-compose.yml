@@ -4,25 +4,8 @@ services:
     environment:
       APP_ENV: production
       BIND_ADDR: 0.0.0.0:3000
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/todo_api
       STATIC_DIR: /app/dist
     env_file:
       - back-end/.env.production
     ports:
       - "3000:3000"
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: todo_api
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - todo_api_pgdata:/var/lib/postgresql/data
-
-volumes:
-  todo_api_pgdata:

@@ -14,9 +14,7 @@ services:
       - key: STATIC_DIR
         value: /app/dist
       - key: DATABASE_URL
-        fromDatabase:
-          name: todo-api-db
-          property: connectionString
+        value: postgresql://neondb_owner:npg_iXe4wTtBaj2p@ep-bold-band-a1o5brcy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       - key: JWT_SECRET
         generateValue: true
       - key: ACCESS_TOKEN_TTL_MIN
@@ -49,8 +47,3 @@ services:
         value: https://todo-api-zx6d.onrender.com
       - key: PASSWORD_RESET_TTL_MIN
         value: "30"
-
-databases:
-  - name: todo-api-db
-    plan: free
-    databaseName: todo_api

@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let database_url: String = std::env::var("DATABASE_URL")?;
+    let database_url = resolve_database_url();
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -202,17 +202,27 @@ fn build_static_service() -> ServeDir<ServeFile> {
 
 fn load_env() -> Result<(), Box<dyn std::error::Error>> {
     let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
-    let env_filename = if env_mode == "production" {
-        ".env.production"
-    } else {
-        ".env"
+    let env_filename = match env_mode.as_str() {
+        "production" => ".env.production",
+        // Prefer a docker-friendly development env file when it exists.
+        _ => ".env.develop",
     };
     let manifest_env = Path::new(env!("CARGO_MANIFEST_DIR")).join(env_filename);
-    let env_path = if manifest_env.exists() {
+    let mut env_path = if manifest_env.exists() {
         manifest_env
     } else {
         PathBuf::from(env_filename)
     };
+
+    // Fallback to the classic ".env" file for local, non-docker development.
+    if !env_path.exists() && env_mode != "production" {
+        let fallback_manifest_env = Path::new(env!("CARGO_MANIFEST_DIR")).join(".env");
+        env_path = if fallback_manifest_env.exists() {
+            fallback_manifest_env
+        } else {
+            PathBuf::from(".env")
+        };
+    }
 
     if env_path.exists() {
         if dotenvy::from_path(&env_path).is_err() {
@@ -223,6 +233,21 @@ fn load_env() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn resolve_database_url() -> String {
+    if let Ok(url) = std::env::var("DATABASE_URL") {
+        return url;
+    }
+
+    let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+    if env_mode == "production" {
+        // Neon pooled connection string provided by the user for production.
+        "postgresql://neondb_owner:npg_iXe4wTtBaj2p@ep-bold-band-a1o5brcy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require".to_string()
+    } else {
+        // Local docker-compose Postgres (mapped to localhost:5433).
+        "postgres://postgres:postgres@localhost:5433/todo_api".to_string()
+    }
 }
 
 fn load_env_fallback(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
