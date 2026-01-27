@@ -242,8 +242,7 @@ fn resolve_database_url() -> String {
 
     let env_mode = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
     if env_mode == "production" {
-        // Neon pooled connection string provided by the user for production.
-        "postgresql://neondb_owner:npg_iXe4wTtBaj2p@ep-bold-band-a1o5brcy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require".to_string()
+        panic!("DATABASE_URL must be set in production.");
     } else {
         // Local docker-compose Postgres (mapped to localhost:5433).
         "postgres://postgres:postgres@localhost:5433/todo_api".to_string()

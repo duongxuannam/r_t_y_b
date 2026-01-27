@@ -14,7 +14,7 @@ services:
       - key: STATIC_DIR
         value: /app/dist
       - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_iXe4wTtBaj2p@ep-bold-band-a1o5brcy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+        value: __SET_IN_RENDER_DASHBOARD__
       - key: JWT_SECRET
         generateValue: true
       - key: ACCESS_TOKEN_TTL_MIN
@@ -22,7 +22,7 @@ services:
       - key: REFRESH_TOKEN_TTL_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        value: https://todo-api-zx6d.onrender.com
+        value: __SET_ALLOWED_ORIGINS__
       - key: RATE_LIMIT_PER_SECOND
         value: "20"
       - key: RATE_LIMIT_BURST
@@ -44,6 +44,6 @@ services:
       - key: SMTP_FROM_NAME
         value: Todo App
       - key: PASSWORD_RESET_URL_BASE
-        value: https://todo-api-zx6d.onrender.com
+        value: __SET_PASSWORD_RESET_URL_BASE__
       - key: PASSWORD_RESET_TTL_MIN
         value: "30"
