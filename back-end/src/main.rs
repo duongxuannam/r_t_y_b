@@ -9,6 +9,7 @@ use axum::{Router, routing::get};
 use axum_prometheus::PrometheusMetricLayer;
 use controllers::{auth_controller, docs_controller, health_controller, todo_controller};
 use dotenvy::dotenv;
+use error::AppError;
 use sqlx::postgres::PgPoolOptions;
 use state::AppState;
 use tower_governor::{
@@ -125,7 +126,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(move || async move { metrics_route_handle.render() }),
         )
         .merge(auth_controller::routes())
-        .merge(todo_controller::routes());
+        .merge(todo_controller::routes())
+        .fallback(api_not_found);
 
     let app = Router::new()
         .nest("/api", api)
@@ -161,6 +163,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     Ok(())
+}
+
+async fn api_not_found() -> AppError {
+    AppError::NotFound
 }
 
 fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
