@@ -9,6 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-icon.svg', 'splash/*.png'],
+      workbox: {
+        navigateFallbackDenylist: [/^\/api\//],
+      },
       manifest: {
         name: 'Todo Pulse',
         short_name: 'Todo Pulse',

@@ -35,7 +35,9 @@ const refreshOnLoad = async () => {
 
 refreshOnLoad()
 
-registerSW({ immediate: true })
+if (import.meta.env.PROD) {
+  registerSW({ immediate: true })
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
