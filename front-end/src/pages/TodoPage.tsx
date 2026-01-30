@@ -1,16 +1,16 @@
 import { observer, useObservable } from '@legendapp/state/react'
+import { AlertTriangle, GripVertical, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, GripVertical } from 'lucide-react'
-import { appState } from '../state/appState'
-import { useTodos } from '../hooks/useTodos'
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
-import { Skeleton } from '../components/ui/skeleton'
 import { message } from '../components/ui/message'
+import { Skeleton } from '../components/ui/skeleton'
+import { useTodos } from '../hooks/useTodos'
 import { t } from '../lib/i18n'
-import type { Todo } from '../types/todo'
 import { cn } from '../lib/utils'
+import { appState } from '../state/appState'
+import type { Todo } from '../types/todo'
 
 const columnOrder = ['todo', 'in_progress', 'done'] as const
 
@@ -18,7 +18,9 @@ const TodoPage = observer(() => {
   const todoForm = useObservable({ title: '' })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<{ status: string; index: number | null } | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ status: string; index: number | null } | null>(
+    null,
+  )
   const lastErrorRef = useRef<Record<string, string | null>>({
     list: null,
     create: null,
@@ -26,8 +28,10 @@ const TodoPage = observer(() => {
     delete: null,
     reorder: null,
   })
+  const createInputRef = useRef<HTMLInputElement>(null)
   const isAuthed = appState.auth.accessToken.get().length > 0
-  const { listQuery, createMutation, updateMutation, reorderMutation, deleteMutation } = useTodos(isAuthed)
+  const { listQuery, createMutation, updateMutation, reorderMutation, deleteMutation } =
+    useTodos(isAuthed)
 
   const todos = listQuery.data ?? []
 
@@ -85,7 +89,9 @@ const TodoPage = observer(() => {
 
     const sourceTodo = todos.find((todo) => todo.id === activeDragId)
     if (!sourceTodo) return
-    const normalizedSourceStatus = columnOrder.includes(sourceTodo.status as (typeof columnOrder)[number])
+    const normalizedSourceStatus = columnOrder.includes(
+      sourceTodo.status as (typeof columnOrder)[number],
+    )
       ? (sourceTodo.status as (typeof columnOrder)[number])
       : 'todo'
     const normalizedTargetStatus = columnOrder.includes(status as (typeof columnOrder)[number])
@@ -173,6 +179,34 @@ const TodoPage = observer(() => {
   }, [deleteMutation.isError, deleteMutation.error])
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+
+      if (event.key === 'Escape' && isCreateOpen) {
+        event.preventDefault()
+        setIsCreateOpen(false)
+        return
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        const target = event.target as HTMLElement | null
+        const tagName = target?.tagName?.toLowerCase()
+        const isEditable =
+          tagName === 'input' || tagName === 'textarea' || target?.isContentEditable
+        if (isEditable) return
+
+        if (event.key.toLowerCase() === 'k') {
+          event.preventDefault()
+          setIsCreateOpen(true)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isCreateOpen])
+
+  useEffect(() => {
     if (typeof document === 'undefined') {
       return undefined
     }
@@ -188,21 +222,41 @@ const TodoPage = observer(() => {
     }
   }, [isCreateOpen])
 
+  useEffect(() => {
+    if (!isCreateOpen) return
+    const frameId = window.requestAnimationFrame(() => createInputRef.current?.focus())
+    return () => window.cancelAnimationFrame(frameId)
+  }, [isCreateOpen])
+
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+    <section className="grid gap-6">
       <div className="p-5 pb-28 glass-panel fade-up sm:p-6 sm:pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold font-display sm:text-3xl">{t('todo.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('todo.subtitle')}</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold font-display sm:text-3xl">{t('todo.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('todo.subtitle')}</p>
+            </div>
+            <Button
+              className="shadow-glow"
+              onClick={() => setIsCreateOpen(true)}
+              aria-label={t('todo.create')}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{t('todo.create')}</span>
+            </Button>
           </div>
           <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
             <div className="rounded-2xl border bg-card/80 p-3 text-center shadow-sm">
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('todo.total')}</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {t('todo.total')}
+              </div>
               <div className="text-xl font-semibold sm:text-2xl">{totalCount}</div>
             </div>
             <div className="rounded-2xl border bg-card/80 p-3 text-center shadow-sm">
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('todo.completed')}</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {t('todo.completed')}
+              </div>
               <div className="text-xl font-semibold sm:text-2xl">{doneCount}</div>
             </div>
           </div>
@@ -278,7 +332,9 @@ const TodoPage = observer(() => {
                           columnTodos.map((todo, index) => {
                             const isDragging = draggingId === todo.id
                             const isDropTarget =
-                              dropTarget?.status === column.id && dropTarget.index === index && draggingId !== todo.id
+                              dropTarget?.status === column.id &&
+                              dropTarget.index === index &&
+                              draggingId !== todo.id
                             return (
                               <div
                                 key={todo.id}
@@ -315,7 +371,8 @@ const TodoPage = observer(() => {
                                     <div>
                                       <p className="font-semibold">{todo.title}</p>
                                       <p className="text-xs text-muted-foreground">
-                                        {t('todo.updated')} {new Date(todo.updated_at).toLocaleString()}
+                                        {t('todo.updated')}{' '}
+                                        {new Date(todo.updated_at).toLocaleString()}
                                       </p>
                                     </div>
                                   </div>
@@ -340,43 +397,10 @@ const TodoPage = observer(() => {
             )}
           </div>
         )}
-
-        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 sm:hidden">
-          <Button className="w-full shadow-glow" onClick={() => setIsCreateOpen(true)}>
-            {t('todo.create')}
-          </Button>
-        </div>
-      </div>
-
-      <div className="hidden p-5 glass-panel fade-up fade-delay-1 sm:block sm:p-6">
-        <h2 className="text-xl font-semibold font-display sm:text-2xl">{t('todo.create')}</h2>
-        <p className="text-sm text-muted-foreground">{t('todo.createSubtitle')}</p>
-        <div className="mt-4 space-y-3">
-          <Input
-            type="text"
-            placeholder={t('todo.titlePlaceholder')}
-            value={todoForm.title.get()}
-            onChange={(event) => todoForm.title.set(event.target.value)}
-          />
-          <Button
-            variant="success"
-            className="w-full shadow-glow"
-            onClick={handleCreate}
-            disabled={!isAuthed || createMutation.isPending}
-          >
-            {createMutation.isPending ? t('todo.saving') : t('todo.add')}
-          </Button>
-          {!isAuthed && <p className="text-xs text-muted-foreground">{t('todo.loginBeforeCreate')}</p>}
-          {(createMutation.isError || updateMutation.isError || deleteMutation.isError || reorderMutation.isError) &&
-            null}
-          <div className="rounded-2xl border border-border/60 bg-card/60 p-4 text-xs text-muted-foreground">
-            {t('todo.dragHint')}
-          </div>
-        </div>
       </div>
 
       {isCreateOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 sm:hidden">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50">
           <button
             className="absolute inset-0 cursor-default"
             onClick={() => setIsCreateOpen(false)}
@@ -391,12 +415,18 @@ const TodoPage = observer(() => {
                 <h2 className="text-lg font-semibold font-display">{t('todo.create')}</h2>
                 <p className="text-xs text-muted-foreground">{t('todo.createSubtitle')}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} aria-label={t('todo.close')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCreateOpen(false)}
+                aria-label={t('todo.close')}
+              >
                 {t('todo.close')}
               </Button>
             </div>
             <div className="mt-4 space-y-3">
               <Input
+                ref={createInputRef}
                 type="text"
                 placeholder={t('todo.titlePlaceholder')}
                 value={todoForm.title.get()}
@@ -410,8 +440,13 @@ const TodoPage = observer(() => {
               >
                 {createMutation.isPending ? t('todo.saving') : t('todo.add')}
               </Button>
-              {!isAuthed && <p className="text-xs text-muted-foreground">{t('todo.loginBeforeCreate')}</p>}
-              {(createMutation.isError || updateMutation.isError || deleteMutation.isError || reorderMutation.isError) &&
+              {!isAuthed && (
+                <p className="text-xs text-muted-foreground">{t('todo.loginBeforeCreate')}</p>
+              )}
+              {(createMutation.isError ||
+                updateMutation.isError ||
+                deleteMutation.isError ||
+                reorderMutation.isError) &&
                 null}
               <div className="rounded-2xl border border-border/60 bg-card/60 p-3 text-xs text-muted-foreground">
                 {t('todo.dragHint')}
