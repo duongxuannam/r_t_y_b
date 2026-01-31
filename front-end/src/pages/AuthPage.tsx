@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { PasswordInput } from '../components/ui/password-input'
 import { t } from '../lib/i18n'
 import { api } from '../services/api'
 import { appState, authActions } from '../state/appState'
@@ -165,8 +166,7 @@ const AuthPage = observer(() => {
                   <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     {t('auth.password')}
                   </label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     className="mt-2"
                     placeholder={t('auth.passwordPlaceholder')}
                     value={form.password.get()}
@@ -214,8 +214,7 @@ const AuthPage = observer(() => {
                   <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     {t('auth.newPassword')}
                   </label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     className="mt-2"
                     placeholder={t('auth.newPasswordPlaceholder')}
                     value={form.resetPassword.get()}
