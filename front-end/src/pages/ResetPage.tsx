@@ -6,6 +6,7 @@ import { api } from '../services/api'
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { PasswordInput } from '../components/ui/password-input'
 import { t } from '../lib/i18n'
 
 const ResetPage = () => {
@@ -43,8 +44,7 @@ const ResetPage = () => {
             value={form.token.get()}
             onChange={(event) => form.token.set(event.target.value)}
           />
-          <Input
-            type="password"
+          <PasswordInput
             placeholder={t('reset.passwordPlaceholder')}
             value={form.password.get()}
             onChange={(event) => form.password.set(event.target.value)}
