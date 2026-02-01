@@ -21,7 +21,13 @@ export const useTodos = (enabled: boolean) => {
       payload,
     }: {
       id: string
-      payload: { title?: string; completed?: boolean; status?: string; position?: number }
+      payload: {
+        title?: string
+        completed?: boolean
+        status?: string
+        position?: number
+        assignee_id?: string | null
+      }
     }) => api.updateTodo(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   })
