@@ -6,6 +6,7 @@ import type {
   MessageResponse,
   RegisterRequest,
   ResetPasswordRequest,
+  UserResponse,
 } from '../types/auth'
 import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
@@ -161,6 +162,9 @@ export const api = {
   },
   listTodos() {
     return request<Todo[]>('/todos')
+  },
+  listUsers() {
+    return request<UserResponse[]>('/users')
   },
   createTodo(payload: CreateTodoRequest) {
     return request<Todo>('/todos', {

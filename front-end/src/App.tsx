@@ -157,6 +157,7 @@ const App = observer(() => {
     }
     authActions.logout()
     queryClient.removeQueries({ queryKey: ['todos'], exact: true })
+    queryClient.removeQueries({ queryKey: ['users'], exact: true })
   }
 
   return (

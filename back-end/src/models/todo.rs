@@ -7,6 +7,7 @@ use uuid::Uuid;
 pub struct CreateTodoRequest {
     pub title: String,
     pub status: Option<String>,
+    pub assignee_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -15,6 +16,7 @@ pub struct UpdateTodoRequest {
     pub completed: Option<bool>,
     pub status: Option<String>,
     pub position: Option<i32>,
+    pub assignee_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -32,7 +34,10 @@ pub struct ReorderTodosRequest {
 #[derive(Debug, Serialize, FromRow, utoipa::ToSchema)]
 pub struct TodoResponse {
     pub id: Uuid,
-    pub user_id: Uuid,
+    pub reporter_id: Uuid,
+    pub reporter_email: String,
+    pub assignee_id: Option<Uuid>,
+    pub assignee_email: Option<String>,
     pub title: String,
     pub completed: bool,
     pub status: String,

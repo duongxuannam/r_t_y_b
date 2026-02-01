@@ -7,7 +7,9 @@ use std::{
 use axum::http::{HeaderValue, Method, header};
 use axum::{Router, routing::get};
 use axum_prometheus::PrometheusMetricLayer;
-use controllers::{auth_controller, docs_controller, health_controller, todo_controller};
+use controllers::{
+    auth_controller, docs_controller, health_controller, todo_controller, user_controller,
+};
 use dotenvy::dotenv;
 use error::AppError;
 use sqlx::postgres::PgPoolOptions;
@@ -45,6 +47,7 @@ mod state;
         todo_controller::update_todo,
         todo_controller::delete_todo,
         todo_controller::reorder_todos,
+        user_controller::list_users,
         health_controller::health_check,
         docs_controller::scalar_ui
     ),
@@ -69,6 +72,7 @@ mod state;
     tags(
         (name = "auth", description = "Authentication"),
         (name = "todos", description = "Todo management"),
+        (name = "users", description = "User directory"),
         (name = "health", description = "Health check"),
         (name = "docs", description = "API documentation")
     )
@@ -127,6 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .merge(auth_controller::routes())
         .merge(todo_controller::routes())
+        .merge(user_controller::routes())
         .fallback(api_not_found);
 
     let app = Router::new()

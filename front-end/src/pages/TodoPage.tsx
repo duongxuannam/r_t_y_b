@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input'
 import { message } from '../components/ui/message'
 import { Skeleton } from '../components/ui/skeleton'
 import { useTodos } from '../hooks/useTodos'
+import { useUsers } from '../hooks/useUsers'
 import { t } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { appState } from '../state/appState'
@@ -15,7 +16,7 @@ import type { Todo } from '../types/todo'
 const columnOrder = ['todo', 'in_progress', 'done'] as const
 
 const TodoPage = observer(() => {
-  const todoForm = useObservable({ title: '' })
+  const todoForm = useObservable({ title: '', assigneeId: '' })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ status: string; index: number | null } | null>(
@@ -30,10 +31,17 @@ const TodoPage = observer(() => {
   })
   const createInputRef = useRef<HTMLInputElement>(null)
   const isAuthed = appState.auth.accessToken.get().length > 0
+  const currentUserId = appState.auth.user.id.get()
   const { listQuery, createMutation, updateMutation, reorderMutation, deleteMutation } =
     useTodos(isAuthed)
+  const { listQuery: usersQuery } = useUsers(isAuthed)
 
   const todos = listQuery.data ?? []
+  const users = usersQuery.data ?? []
+  const sortedUsers = useMemo(
+    () => [...users].sort((a, b) => a.email.localeCompare(b.email)),
+    [users],
+  )
 
   const columns = [
     {
@@ -80,7 +88,11 @@ const TodoPage = observer(() => {
   const handleCreate = () => {
     const title = todoForm.title.get().trim()
     if (!title) return
-    createMutation.mutate({ title }, { onSuccess: () => todoForm.title.set('') })
+    const assigneeId = todoForm.assigneeId.get()
+    createMutation.mutate(
+      { title, assignee_id: assigneeId || undefined },
+      { onSuccess: () => todoForm.title.set('') },
+    )
   }
 
   const handleDrop = (status: string, index: number | null, draggedId?: string) => {
@@ -177,6 +189,17 @@ const TodoPage = observer(() => {
       }
     }
   }, [deleteMutation.isError, deleteMutation.error])
+
+  useEffect(() => {
+    if (!isAuthed || sortedUsers.length === 0) return
+    if (!todoForm.assigneeId.get()) {
+      const defaultAssignee =
+        sortedUsers.find((user) => user.id === currentUserId)?.id ?? sortedUsers[0]?.id ?? ''
+      if (defaultAssignee) {
+        todoForm.assigneeId.set(defaultAssignee)
+      }
+    }
+  }, [currentUserId, isAuthed, sortedUsers, todoForm])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -370,6 +393,15 @@ const TodoPage = observer(() => {
                                     <GripVertical className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                     <div>
                                       <p className="font-semibold">{todo.title}</p>
+                                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        <span>
+                                          {t('todo.assignee')}:{' '}
+                                          {todo.assignee_email ?? t('todo.unassigned')}
+                                        </span>
+                                        <span>
+                                          {t('todo.reporter')}: {todo.reporter_email}
+                                        </span>
+                                      </div>
                                       <p className="text-xs text-muted-foreground">
                                         {t('todo.updated')}{' '}
                                         {new Date(todo.updated_at).toLocaleString()}
@@ -385,6 +417,32 @@ const TodoPage = observer(() => {
                                     {t('todo.delete')}
                                   </Button>
                                 </div>
+                                {isAuthed && sortedUsers.length > 0 && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{t('todo.assignTo')}</span>
+                                    <select
+                                      className="h-9 w-full rounded-xl border border-input bg-background px-3 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                      value={todo.assignee_id ?? sortedUsers[0]?.id ?? ''}
+                                      onChange={(event) =>
+                                        updateMutation.mutate({
+                                          id: todo.id,
+                                          payload: { assignee_id: event.target.value },
+                                        })
+                                      }
+                                      disabled={updateMutation.isPending}
+                                    >
+                                      {sortedUsers.length === 0 ? (
+                                        <option value="">{t('todo.noAssignees')}</option>
+                                      ) : (
+                                        sortedUsers.map((user) => (
+                                          <option key={user.id} value={user.id}>
+                                            {user.email}
+                                          </option>
+                                        ))
+                                      )}
+                                    </select>
+                                  </div>
+                                )}
                               </div>
                             )
                           })
@@ -432,6 +490,27 @@ const TodoPage = observer(() => {
                 value={todoForm.title.get()}
                 onChange={(event) => todoForm.title.set(event.target.value)}
               />
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  {t('todo.assignTo')}
+                </label>
+                <select
+                  className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  value={todoForm.assigneeId.get()}
+                  onChange={(event) => todoForm.assigneeId.set(event.target.value)}
+                  disabled={!isAuthed || usersQuery.isLoading || sortedUsers.length === 0}
+                >
+                  {sortedUsers.length === 0 ? (
+                    <option value="">{t('todo.noAssignees')}</option>
+                  ) : (
+                    sortedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.email}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
               <Button
                 variant="success"
                 className="w-full shadow-glow"

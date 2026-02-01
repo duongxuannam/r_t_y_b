@@ -1,6 +1,9 @@
 export type Todo = {
   id: string
-  user_id: string
+  reporter_id: string
+  reporter_email: string
+  assignee_id: string | null
+  assignee_email: string | null
   title: string
   completed: boolean
   status: string
@@ -12,6 +15,7 @@ export type Todo = {
 export type CreateTodoRequest = {
   title: string
   status?: string
+  assignee_id?: string | null
 }
 
 export type UpdateTodoRequest = {
@@ -19,6 +23,7 @@ export type UpdateTodoRequest = {
   completed?: boolean
   status?: string
   position?: number
+  assignee_id?: string | null
 }
 
 export type ReorderTodoItem = {
