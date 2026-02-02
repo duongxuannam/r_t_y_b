@@ -13,11 +13,28 @@ import { cn } from './lib/utils'
 import { api } from './services/api'
 import { appActions, appState, authActions, languageActions, themeOptions } from './state/appState'
 
+const TOUR_STORAGE_KEY = 'todo-pulse-tour-seen'
+
 const routes = [
   { to: '/app', labelKey: 'nav.mainApp' },
   { to: '/about', labelKey: 'nav.about' },
   { to: '/auth', labelKey: 'nav.auth' },
 ] as const satisfies ReadonlyArray<{ to: string; labelKey: TranslationKey }>
+
+const tourSteps = [
+  {
+    titleKey: 'tour.step.welcome.title',
+    descriptionKey: 'tour.step.welcome.description',
+  },
+  {
+    titleKey: 'tour.step.auth.title',
+    descriptionKey: 'tour.step.auth.description',
+  },
+  {
+    titleKey: 'tour.step.todos.title',
+    descriptionKey: 'tour.step.todos.description',
+  },
+] as const satisfies ReadonlyArray<{ titleKey: TranslationKey; descriptionKey: TranslationKey }>
 
 const LanguageMenu = ({
   buttonClassName,
@@ -103,6 +120,8 @@ const App = observer(() => {
   const authUser = appState.auth.user.get()
   const isAuthed = appState.auth.accessToken.get().length > 0
   const queryClient = useQueryClient()
+  const [tourOpen, setTourOpen] = useState(false)
+  const [tourStep, setTourStep] = useState(0)
   const localizedThemeOptions = themeOptions.map((option) => ({
     ...option,
     label: option.id === 'light' ? t('theme.light') : t('theme.dark'),
@@ -119,6 +138,17 @@ const App = observer(() => {
       document.documentElement.setAttribute('lang', language)
     }
   }, [language])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const seen = window.localStorage.getItem(TOUR_STORAGE_KEY)
+    if (!seen) {
+      setTourOpen(true)
+      setTourStep(0)
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -158,6 +188,24 @@ const App = observer(() => {
     authActions.logout()
     queryClient.removeQueries({ queryKey: ['todos'], exact: true })
     queryClient.removeQueries({ queryKey: ['users'], exact: true })
+  }
+
+  const markTourSeen = () => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(TOUR_STORAGE_KEY, 'true')
+  }
+
+  const handleTourClose = () => {
+    setTourOpen(false)
+    markTourSeen()
+  }
+
+  const handleTourNext = () => {
+    if (tourStep >= tourSteps.length - 1) {
+      handleTourClose()
+      return
+    }
+    setTourStep((prev) => prev + 1)
   }
 
   return (
@@ -242,6 +290,52 @@ const App = observer(() => {
           }
         }</Computed>
         <MessageHost />
+        {tourOpen ? (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 py-8" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-white/20 bg-background/95 p-6 shadow-2xl sm:p-8">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    {t('tour.step')} {tourStep + 1} / {tourSteps.length}
+                  </p>
+                  <h2 className="mt-3 text-2xl font-semibold">{t('tour.title')}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{t('tour.subtitle')}</p>
+                </div>
+                <button
+                  className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                  type="button"
+                  onClick={handleTourClose}
+                >
+                  {t('tour.skip')}
+                </button>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-border/60 bg-card/80 p-4">
+                <h3 className="text-lg font-semibold">{t(tourSteps[tourStep].titleKey)}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t(tourSteps[tourStep].descriptionKey)}</p>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between">
+                <button
+                  className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                  type="button"
+                  onClick={() => setTourStep((prev) => Math.max(0, prev - 1))}
+                  disabled={tourStep === 0}
+                >
+                  {t('tour.back')}
+                </button>
+                <button
+                  className={buttonVariants({ variant: 'default', size: 'sm' })}
+                  type="button"
+                  onClick={handleTourNext}
+                >
+                  {tourStep === tourSteps.length - 1 ? t('tour.finish') : t('tour.next')}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <Computed>
           {() => {
