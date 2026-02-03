@@ -27,6 +27,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 mod controllers;
 mod error;
+mod locale;
 
 mod models;
 mod services;
@@ -190,6 +191,7 @@ fn build_cors_layer(origins: &[HeaderValue]) -> CorsLayer {
         cors.allow_origin(AllowOrigin::list(origins.iter().cloned()))
             .allow_headers(AllowHeaders::list([
                 header::ACCEPT,
+                header::ACCEPT_LANGUAGE,
                 header::CONTENT_TYPE,
                 header::AUTHORIZATION,
             ]))

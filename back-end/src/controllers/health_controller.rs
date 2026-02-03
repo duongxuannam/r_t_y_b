@@ -1,6 +1,8 @@
 use axum::Json;
 use serde::Serialize;
 
+use crate::locale::Language;
+
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct HealthResponse {
     pub message: String,
@@ -12,8 +14,8 @@ pub struct HealthResponse {
     tag = "health",
     responses((status = 200, body = HealthResponse))
 )]
-pub async fn health_check() -> Json<HealthResponse> {
+pub async fn health_check(language: Language) -> Json<HealthResponse> {
     Json(HealthResponse {
-        message: "success".to_string(),
+        message: language.message("success", "thành công"),
     })
 }
