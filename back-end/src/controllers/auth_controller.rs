@@ -5,6 +5,7 @@ use time::Duration;
 
 use crate::{
     error::AppError,
+    locale::Language,
     models::auth::{
         AuthResponse, ForgotPasswordRequest, LoginRequest, MessageResponse, RefreshRequest,
         RegisterRequest, ResetPasswordRequest,
@@ -107,11 +108,15 @@ pub async fn logout(
 )]
 pub async fn forgot(
     State(state): State<AppState>,
+    language: Language,
     Json(payload): Json<ForgotPasswordRequest>,
 ) -> Result<Json<MessageResponse>, AppError> {
     auth_service::forgot_password(&state, payload).await?;
     Ok(Json(MessageResponse {
-        message: "Nếu email tồn tại, reset link sẽ được gửi.".to_string(),
+        message: language.message(
+            "If the email exists, a reset link will be sent.",
+            "Nếu email tồn tại, reset link sẽ được gửi.",
+        ),
     }))
 }
 
@@ -127,11 +132,12 @@ pub async fn forgot(
 )]
 pub async fn reset(
     State(state): State<AppState>,
+    language: Language,
     Json(payload): Json<ResetPasswordRequest>,
 ) -> Result<Json<MessageResponse>, AppError> {
     auth_service::reset_password(&state, payload).await?;
     Ok(Json(MessageResponse {
-        message: "Mật khẩu đã được cập nhật.".to_string(),
+        message: language.message("Password has been updated.", "Mật khẩu đã được cập nhật."),
     }))
 }
 

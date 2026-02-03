@@ -21,10 +21,15 @@ const AUTH_PATHS = [
 ]
 let refreshPromise: Promise<AuthResponse> | null = null
 
+const getLanguageHeader = () => appState.language.get() || 'en'
+
 const buildHeaders = (accessToken: string, options?: RequestInit) => {
   const headers = new Headers(options?.headers)
   if (options?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
+  }
+  if (!headers.has('Accept-Language')) {
+    headers.set('Accept-Language', getLanguageHeader())
   }
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
@@ -69,6 +74,7 @@ const refreshSession = async (): Promise<AuthResponse> => {
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
+        headers: buildHeaders(''),
       })
       if (!response.ok) {
         const message = await response.text()
