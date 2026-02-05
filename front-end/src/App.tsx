@@ -4,6 +4,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { ChevronDown } from 'lucide-react'
 import ThemeToggle from './components/ThemeToggle'
+import AiAssistant from './components/AiAssistant'
 import { Badge } from './components/ui/badge'
 import { buttonVariants } from './components/ui/button-variants'
 import { MessageHost } from './components/ui/message-host'
@@ -290,6 +291,7 @@ const App = observer(() => {
           }
         }</Computed>
         <MessageHost />
+        <AiAssistant />
         {tourOpen ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 py-8" role="dialog" aria-modal="true">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
