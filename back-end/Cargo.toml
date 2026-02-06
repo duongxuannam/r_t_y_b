@@ -28,3 +28,6 @@ tower_governor = "0.4"
 axum-prometheus = "0.7"
 lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
 time = "0.3"
+hyper = "1.8"
+hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1"] }
+http-body-util = "0.1"

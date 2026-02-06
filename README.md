@@ -11,6 +11,7 @@ Axum + PostgreSQL todo API with JWT auth, paired with a React front-end.
 1) Create a database (example uses `todo_api`).
 2) Copy `back-end/.env.example` to `back-end/.env` and update values (Docker Compose exposes Postgres on `5433`).
 3) Ensure `JWT_SECRET` is at least 32 characters. Adjust `ALLOWED_ORIGINS`, `RATE_LIMIT_PER_SECOND`, and `RATE_LIMIT_BURST` as needed.
+   - Optional: configure local AI by setting `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and `OLLAMA_TIMEOUT_SECONDS`.
 4) Run the stack:
 
 ```bash
@@ -42,6 +43,9 @@ Open http://127.0.0.1:3000/docs
 - `POST /auth/logout` to revoke a refresh token
 - `POST /auth/forgot` to send a reset token email
 - `POST /auth/reset` to set a new password using the reset token
+
+## Local AI (Ollama)
+- `POST /ai/generate` with `{ "prompt": "..." }` to generate a response using the configured Ollama model.
 
 ## Observability & Ops
 - Metrics: `GET /metrics` (Prometheus format).

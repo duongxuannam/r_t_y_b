@@ -8,7 +8,8 @@ use axum::http::{HeaderValue, Method, header};
 use axum::{Router, routing::get};
 use axum_prometheus::PrometheusMetricLayer;
 use controllers::{
-    auth_controller, docs_controller, health_controller, todo_controller, user_controller,
+    ai_controller, auth_controller, docs_controller, health_controller, todo_controller,
+    user_controller,
 };
 use dotenvy::dotenv;
 use error::AppError;
@@ -36,6 +37,7 @@ mod state;
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        ai_controller::generate,
         auth_controller::register,
         auth_controller::login,
         auth_controller::refresh,
@@ -53,6 +55,8 @@ mod state;
         docs_controller::scalar_ui
     ),
     components(schemas(
+        models::ai::AiGenerateRequest,
+        models::ai::AiGenerateResponse,
         models::auth::RegisterRequest,
         models::auth::LoginRequest,
         models::auth::RefreshRequest,
@@ -71,6 +75,7 @@ mod state;
     )),
     servers((url = "/api", description = "API base")),
     tags(
+        (name = "ai", description = "Local AI integration"),
         (name = "auth", description = "Authentication"),
         (name = "todos", description = "Todo management"),
         (name = "users", description = "User directory"),
@@ -130,6 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/metrics",
             get(move || async move { metrics_route_handle.render() }),
         )
+        .merge(ai_controller::routes())
         .merge(auth_controller::routes())
         .merge(todo_controller::routes())
         .merge(user_controller::routes())
