@@ -8,6 +8,7 @@ pub struct AppState {
     pub db: Pool<Postgres>,
     pub jwt: JwtConfig,
     pub email: EmailConfig,
+    pub ollama: OllamaConfig,
     pub cors_allowed_origins: Vec<HeaderValue>,
     pub rate_limit_per_second: NonZeroU32,
     pub rate_limit_burst: NonZeroU32,
@@ -32,6 +33,13 @@ pub struct EmailConfig {
     pub from_name: String,
     pub reset_url_base: String,
     pub reset_ttl_minutes: i64,
+}
+
+#[derive(Clone)]
+pub struct OllamaConfig {
+    pub base_url: String,
+    pub default_model: String,
+    pub timeout_seconds: u64,
 }
 
 impl AppState {
@@ -75,6 +83,16 @@ impl AppState {
             return Err("PASSWORD_RESET_TTL_MIN must be greater than zero".into());
         }
 
+        let ollama_base_url =
+            std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".to_string());
+        let ollama_default_model =
+            std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama3.1".to_string());
+        let ollama_timeout_seconds = parse_u64(
+            "OLLAMA_TIMEOUT_SECONDS",
+            std::env::var("OLLAMA_TIMEOUT_SECONDS").ok(),
+            60,
+        )?;
+
         let cors_allowed_origins = parse_allowed_origins(
             std::env::var("ALLOWED_ORIGINS").ok(),
             &["http://localhost:3000", "http://localhost:5173"],
@@ -117,6 +135,11 @@ impl AppState {
                 reset_url_base,
                 reset_ttl_minutes,
             },
+            ollama: OllamaConfig {
+                base_url: ollama_base_url,
+                default_model: ollama_default_model,
+                timeout_seconds: ollama_timeout_seconds,
+            },
             cors_allowed_origins,
             rate_limit_per_second,
             rate_limit_burst,
@@ -143,6 +166,25 @@ fn parse_non_zero(
     };
 
     NonZeroU32::new(value).ok_or_else(|| format!("{name} must be greater than zero").into())
+}
+
+fn parse_u64(
+    name: &str,
+    raw: Option<String>,
+    default: u64,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let value = match raw {
+        Some(val) => val
+            .parse()
+            .map_err(|_| format!("{name} must be a positive integer"))?,
+        None => default,
+    };
+
+    if value == 0 {
+        return Err(format!("{name} must be greater than zero").into());
+    }
+
+    Ok(value)
 }
 
 fn parse_allowed_origins(
