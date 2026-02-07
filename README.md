@@ -80,6 +80,9 @@ The GitHub Actions workflow deploys by setting `IMAGE_REF` in `/opt/todo-api/.en
 running `docker compose pull` + `up -d`. Ensure your VPS has Docker + Compose installed
 and that the `.env` file includes required variables (database, JWT, SMTP, etc.).
 
+For a full Vietnamese guide (deploy VPS, backup data, rollback version), see
+`deploy/DEPLOY_GUIDE.md`.
+
 ## CI keywords
 - Add `[run-ci]` to a commit message (or PR title/body) to run the main CI workflow.
 - Add `[run-ci-vps]` to a commit message to run the VPS deploy workflow.
