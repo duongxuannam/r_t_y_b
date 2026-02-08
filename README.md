@@ -32,6 +32,18 @@ bun install
 bun run dev
 ```
 
+## Bun + Hono backend (TypeScript)
+This repo also includes a Bun + Hono implementation of the backend in `bun_hono`.
+
+```bash
+cd bun_hono
+bun install
+bun run dev
+```
+
+The API surface mirrors the Rust backend (auth, todos, users, AI, metrics, and docs) and
+uses the same database schema and environment variables.
+
 ## Swagger
 Open http://127.0.0.1:3000/docs
 

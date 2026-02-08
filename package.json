@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "workspaces": [
     "front-end",
-    "back-end"
+    "back-end",
+    "bun_hono"
   ],
   "scripts": {
     "dev": "turbo run dev --parallel",
