@@ -8,8 +8,8 @@ use axum::http::{HeaderValue, Method, header};
 use axum::{Router, routing::get};
 use axum_prometheus::PrometheusMetricLayer;
 use controllers::{
-    ai_controller, auth_controller, docs_controller, health_controller, todo_controller,
-    user_controller,
+    ai_controller, auth_controller, docs_controller, health_controller, system_controller,
+    todo_controller, user_controller,
 };
 use dotenvy::dotenv;
 use error::AppError;
@@ -52,6 +52,7 @@ mod state;
         todo_controller::reorder_todos,
         user_controller::list_users,
         health_controller::health_check,
+        system_controller::unit_test_coverage,
         docs_controller::scalar_ui
     ),
     components(schemas(
@@ -71,7 +72,8 @@ mod state;
         models::todo::ReorderTodoItem,
         models::todo::TodoResponse,
         error::ErrorResponse,
-        controllers::health_controller::HealthResponse
+        controllers::health_controller::HealthResponse,
+        controllers::system_controller::CoverageResponse
     )),
     servers((url = "/api", description = "API base")),
     tags(
@@ -80,6 +82,7 @@ mod state;
         (name = "todos", description = "Todo management"),
         (name = "users", description = "User directory"),
         (name = "health", description = "Health check"),
+        (name = "system", description = "System information"),
         (name = "docs", description = "API documentation")
     )
 )]
@@ -139,6 +142,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(auth_controller::routes())
         .merge(todo_controller::routes())
         .merge(user_controller::routes())
+        .merge(system_controller::routes())
         .fallback(api_not_found);
 
     let app = Router::new()
