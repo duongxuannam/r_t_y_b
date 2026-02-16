@@ -83,8 +83,8 @@ impl AppState {
             return Err("PASSWORD_RESET_TTL_MIN must be greater than zero".into());
         }
 
-        let ollama_base_url =
-            std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".to_string());
+        let ollama_base_url = std::env::var("OLLAMA_BASE_URL")
+            .unwrap_or_else(|_| "http://localhost:11434".to_string());
         let ollama_default_model =
             std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama3.1".to_string());
         let ollama_timeout_seconds = parse_u64(

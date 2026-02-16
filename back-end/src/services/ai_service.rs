@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use http_body_util::{BodyExt, Full};
-use hyper::{Method, Request, StatusCode};
 use hyper::body::Bytes;
+use hyper::{Method, Request, StatusCode};
 use hyper_util::client::legacy::{Client, connect::HttpConnector};
 use hyper_util::rt::TokioExecutor;
 

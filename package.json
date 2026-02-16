@@ -8,6 +8,8 @@
     "bun_hono"
   ],
   "scripts": {
+    "prepare": "bash scripts/setup-git-hooks.sh",
+    "hooks:install": "bash scripts/setup-git-hooks.sh",
     "dev": "turbo run dev --parallel",
     "dev:fe": "cd front-end && bun run dev",
     "dev:be": "cd back-end && cargo run",

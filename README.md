@@ -19,6 +19,14 @@ bun install
 bun run dev
 ```
 
+`bun install` also runs `prepare` to install git hooks (`core.hooksPath=.githooks`).
+The pre-commit hook formats Rust code in `back-end` via `cargo fmt`.
+If needed, reinstall hooks manually:
+
+```bash
+bun run hooks:install
+```
+
 Or run each side directly:
 
 ```bash
