@@ -8,10 +8,10 @@ import type {
   ResetPasswordRequest,
   UserResponse,
 } from '../types/auth'
-import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 import type { UnitTestCoverageResponse } from '../types/system'
+import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const AUTH_PATHS = [
   '/auth/login',
   '/auth/register',
@@ -200,4 +200,3 @@ export const api = {
     return request<UnitTestCoverageResponse>('/system/unit-test-coverage')
   },
 }
-
