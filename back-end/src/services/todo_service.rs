@@ -207,10 +207,10 @@ pub async fn update_todo(
 pub async fn delete_todo(state: &AppState, user_id: Uuid, todo_id: Uuid) -> Result<(), AppError> {
     let result =
         sqlx::query("DELETE FROM todos WHERE id = $1 AND (reporter_id = $2 OR assignee_id = $2)")
-        .bind(todo_id)
-        .bind(user_id)
-        .execute(&state.db)
-        .await?;
+            .bind(todo_id)
+            .bind(user_id)
+            .execute(&state.db)
+            .await?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound);

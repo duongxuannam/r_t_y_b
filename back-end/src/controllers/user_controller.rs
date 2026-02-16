@@ -1,11 +1,8 @@
 use axum::{Json, Router, extract::State, routing::get};
 
 use crate::{
-    controllers::extractors::AuthUser,
-    error::AppError,
-    models::auth::UserResponse,
-    services::user_service,
-    state::AppState,
+    controllers::extractors::AuthUser, error::AppError, models::auth::UserResponse,
+    services::user_service, state::AppState,
 };
 
 #[utoipa::path(

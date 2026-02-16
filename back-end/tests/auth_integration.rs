@@ -4,7 +4,7 @@ use todo_api::{
     error::AppError,
     models::auth::{LoginRequest, RegisterRequest},
     services::auth_service,
-    state::{AppState, EmailConfig, JwtConfig},
+    state::{AppState, EmailConfig, JwtConfig, OllamaConfig},
 };
 use uuid::Uuid;
 
@@ -52,6 +52,11 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
             from_name: "Todo App".into(),
             reset_url_base: "http://localhost:5173".into(),
             reset_ttl_minutes: 30,
+        },
+        ollama: OllamaConfig {
+            base_url: "http://localhost:11434".into(),
+            default_model: "llama3.1".into(),
+            timeout_seconds: 60,
         },
         cors_allowed_origins: Vec::new(),
         rate_limit_per_second: NonZeroU32::new(10).unwrap(),
