@@ -91,7 +91,12 @@ const TodoPage = observer(() => {
     const assigneeId = todoForm.assigneeId.get()
     createMutation.mutate(
       { title, assignee_id: assigneeId || undefined },
-      { onSuccess: () => todoForm.title.set('') },
+      {
+        onSuccess: () => {
+          todoForm.title.set('')
+          setIsCreateOpen(false)
+        },
+      },
     )
   }
 
