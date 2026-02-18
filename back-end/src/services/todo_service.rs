@@ -119,7 +119,7 @@ pub async fn get_todo(
     todo_id: Uuid,
 ) -> Result<TodoResponse, AppError> {
     let todo = sqlx::query_as::<_, TodoResponse>(
-        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.id = $1 AND (todos.reporter_id = $2 OR todos.assignee_id = $2)",
+        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.id = $1 AND EXISTS (SELECT 1 FROM todos visible_todos WHERE visible_todos.id = todos.id AND (visible_todos.reporter_id = $2 OR visible_todos.assignee_id = $2))",
     )
     .bind(todo_id)
     .bind(user_id)
