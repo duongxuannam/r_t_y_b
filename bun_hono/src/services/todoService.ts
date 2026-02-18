@@ -126,7 +126,13 @@ export const getTodo = async (state: AppState, userId: string, todoId: string): 
     FROM todos
     JOIN users reporter ON reporter.id = todos.reporter_id
     LEFT JOIN users assignee ON assignee.id = todos.assignee_id
-    WHERE todos.id = ${todoId} AND (todos.reporter_id = ${userId} OR todos.assignee_id = ${userId})
+    WHERE todos.id = ${todoId}
+      AND EXISTS (
+        SELECT 1
+        FROM todos visible_todos
+        WHERE visible_todos.id = todos.id
+          AND (visible_todos.reporter_id = ${userId} OR visible_todos.assignee_id = ${userId})
+      )
   `;
 
   if (!todo) {
