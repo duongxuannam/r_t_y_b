@@ -463,20 +463,21 @@ const TodoPage = observer(() => {
       </div>
 
       {isCreateOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/55 px-4 py-10 backdrop-blur-sm sm:px-8">
           <button
             className="absolute inset-0 cursor-default"
             onClick={() => setIsCreateOpen(false)}
             aria-label={t('todo.closeCreateModal')}
           />
           <div
-            className="glass-panel relative z-10 mx-4 w-full max-w-sm p-5 shadow-2xl"
+            className="glass-panel relative z-10 w-full max-w-sm overflow-hidden p-5 shadow-2xl transition-all duration-300 ease-out animate-in zoom-in-95 sm:max-w-xl sm:rounded-3xl sm:p-7"
             onClick={(event) => event.stopPropagation()}
           >
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-400/80 via-fuchsia-400/70 to-emerald-400/70" />
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold font-display">{t('todo.create')}</h2>
-                <p className="text-xs text-muted-foreground">{t('todo.createSubtitle')}</p>
+                <h2 className="text-lg font-semibold font-display sm:text-2xl">{t('todo.create')}</h2>
+                <p className="text-xs text-muted-foreground sm:mt-1 sm:text-sm">{t('todo.createSubtitle')}</p>
               </div>
               <Button
                 variant="ghost"
@@ -487,7 +488,7 @@ const TodoPage = observer(() => {
                 {t('todo.close')}
               </Button>
             </div>
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
               <Input
                 ref={createInputRef}
                 type="text"
