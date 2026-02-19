@@ -11,7 +11,33 @@ import type {
 import type { UnitTestCoverageResponse } from '../types/system'
 import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
+
+const isLocalHost = (hostname: string) => LOCAL_HOSTS.has(hostname)
+
+const resolveApiBaseUrl = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
+  if (!configuredBaseUrl) {
+    return '/api'
+  }
+
+  if (typeof window === 'undefined') {
+    return configuredBaseUrl
+  }
+
+  try {
+    const apiUrl = new URL(configuredBaseUrl, window.location.origin)
+    if (isLocalHost(apiUrl.hostname) && !isLocalHost(window.location.hostname)) {
+      return '/api'
+    }
+  } catch {
+    // If URL parsing fails we keep the configured value.
+  }
+
+  return configuredBaseUrl
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 const AUTH_PATHS = [
   '/auth/login',
   '/auth/register',
