@@ -52,6 +52,9 @@ bun run dev
 The API surface mirrors the Rust backend (auth, todos, users, AI, metrics, and docs) and
 uses the same database schema and environment variables.
 
+## .NET folder scaffold
+Đã thêm thư mục `dotnet/` với cấu trúc phân tầng theo chức năng (Api/Application/Domain/Infrastructure/Shared) để tránh dồn logic vào một file duy nhất. Xem chi tiết tại `dotnet/README.md`.
+
 ## Swagger
 Open http://127.0.0.1:3000/docs
 
