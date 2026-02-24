@@ -1,26 +1,59 @@
-# Rust Todo API
+# Rust Todo API Monorepo
 
-Axum + PostgreSQL todo API with JWT auth and Swagger docs.
+Axum + PostgreSQL todo API with JWT auth, paired with a React front-end.
 
 ## Requirements
 - Rust toolchain
 - PostgreSQL
+- Bun (latest)
 
 ## Setup
 1) Create a database (example uses `todo_api`).
-2) Copy `.env.example` to `.env` and update values (Docker Compose exposes Postgres on `5433`).
+2) Copy `back-end/.env.example` to `back-end/.env` and update values (Docker Compose exposes Postgres on `5433`).
 3) Ensure `JWT_SECRET` is at least 32 characters. Adjust `ALLOWED_ORIGINS`, `RATE_LIMIT_PER_SECOND`, and `RATE_LIMIT_BURST` as needed.
-4) Run the server:
+   - Optional: configure local AI by setting `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and `OLLAMA_TIMEOUT_SECONDS`.
+4) Run the stack:
 
 ```bash
+bun install
+bun run dev
+```
+
+`bun install` also runs `prepare` to install git hooks (`core.hooksPath=.githooks`).
+The pre-commit hook formats Rust code in `back-end` via `cargo fmt`.
+If needed, reinstall hooks manually:
+
+```bash
+bun run hooks:install
+```
+
+Or run each side directly:
+
+```bash
+cd back-end
 cargo run
 ```
 
-## CI keywords
-This repository uses explicit commit/PR keywords to run CI and deployments:
+```bash
+cd front-end
+bun install
+bun run dev
+```
 
-- `[run-ci]` triggers the main CI workflow (lint/test/build) and Docker build on pushes.
-- `[run-ci-vps]` triggers the VPS deploy workflow on pushes.
+## Bun + Hono backend (TypeScript)
+This repo also includes a Bun + Hono implementation of the backend in `bun_hono`.
+
+```bash
+cd bun_hono
+bun install
+bun run dev
+```
+
+The API surface mirrors the Rust backend (auth, todos, users, AI, metrics, and docs) and
+uses the same database schema and environment variables.
+
+## .NET folder scaffold
+Đã thêm thư mục `dotnet/` với cấu trúc phân tầng theo chức năng (Api/Application/Domain/Infrastructure/Shared) để tránh dồn logic vào một file duy nhất. Xem chi tiết tại `dotnet/README.md`.
 
 ## Swagger
 Open http://127.0.0.1:3000/docs
@@ -33,6 +66,9 @@ Open http://127.0.0.1:3000/docs
 - `POST /auth/logout` to revoke a refresh token
 - `POST /auth/forgot` to send a reset token email
 - `POST /auth/reset` to set a new password using the reset token
+
+## Local AI (Ollama)
+- `POST /ai/generate` with `{ "prompt": "..." }` to generate a response using the configured Ollama model.
 
 ## Observability & Ops
 - Metrics: `GET /metrics` (Prometheus format).
@@ -60,12 +96,19 @@ adjust paths as needed:
 ```bash
 mkdir -p /opt/todo-api
 cp deploy/docker-compose.vps.yml /opt/todo-api/docker-compose.yml
-cp .env.example /opt/todo-api/.env
+cp back-end/.env.example /opt/todo-api/.env
 ```
 
 The GitHub Actions workflow deploys by setting `IMAGE_REF` in `/opt/todo-api/.env` and
 running `docker compose pull` + `up -d`. Ensure your VPS has Docker + Compose installed
 and that the `.env` file includes required variables (database, JWT, SMTP, etc.).
+
+For a full Vietnamese guide (deploy VPS, backup data, rollback version), see
+`deploy/DEPLOY_GUIDE.md`.
+
+## CI keywords
+- Add `[run-ci]` to a commit message (or PR title/body) to run the main CI workflow.
+- Add `[run-ci-vps]` to a commit message to run the VPS deploy workflow.
 
 ## Example
 ```bash

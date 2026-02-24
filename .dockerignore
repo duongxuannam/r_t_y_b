@@ -1,7 +1,12 @@
+/back-end/target
+/back-end/dist
+/front-end/node_modules
 /target
+/back-end/.env
+/back-end/.env.develop
+/back-end/.env.example
+/back-end/.env.production
 /.git
 /.github
-/.env
-/.env.example
 /README.md
 /docker-compose.yml

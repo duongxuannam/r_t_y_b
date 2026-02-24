@@ -1,23 +1,28 @@
-FROM node:20-bookworm-slim AS frontend
+FROM oven/bun:1.1.34 AS frontend
 
 WORKDIR /app/front-end
 
-COPY front-end/package.json front-end/package-lock.json ./
+COPY front-end/package.json front-end/bun.lock ./
 
-RUN npm ci
+RUN bun install
 
 COPY front-end ./
 
-RUN npm run build-for-be
+RUN bun run build
 
 FROM rust:1.88-bookworm AS builder
 
-WORKDIR /app
+WORKDIR /app/back-end
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-COPY migrations ./migrations
+COPY back-end/Cargo.toml back-end/Cargo.lock ./
+COPY back-end/migrations ./migrations
 
+# Build dependencies first for better layer caching when only src changes.
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release || true
+
+# Now copy the real source and build the actual binary.
+COPY back-end/src ./src
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
@@ -30,9 +35,9 @@ WORKDIR /app
 
 RUN useradd -r -u 10001 appuser
 
-COPY --from=builder /app/target/release/todo_api /app/todo_api
-COPY --from=builder /app/migrations /app/migrations
-COPY --from=frontend /app/dist /app/dist
+COPY --from=builder /app/back-end/target/release/todo_api /app/todo_api
+COPY --from=builder /app/back-end/migrations /app/migrations
+COPY --from=frontend /app/front-end/dist /app/dist
 
 ENV BIND_ADDR=0.0.0.0:3000
 

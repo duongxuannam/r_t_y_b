@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: cargo-fmt
         name: cargo fmt
-        entry: cargo fmt --all
+        entry: bash -lc 'cd back-end && cargo fmt --all'
         language: system
         types: [rust]
         pass_filenames: false

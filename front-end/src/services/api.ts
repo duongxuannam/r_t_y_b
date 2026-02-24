@@ -6,10 +6,38 @@ import type {
   MessageResponse,
   RegisterRequest,
   ResetPasswordRequest,
+  UserResponse,
 } from '../types/auth'
-import type { CreateTodoRequest, Todo, UpdateTodoRequest } from '../types/todo'
+import type { UnitTestCoverageResponse } from '../types/system'
+import type { CreateTodoRequest, ReorderTodosRequest, Todo, UpdateTodoRequest } from '../types/todo'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
+
+const isLocalHost = (hostname: string) => LOCAL_HOSTS.has(hostname)
+
+const resolveApiBaseUrl = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
+  if (!configuredBaseUrl) {
+    return '/api'
+  }
+
+  if (typeof window === 'undefined') {
+    return configuredBaseUrl
+  }
+
+  try {
+    const apiUrl = new URL(configuredBaseUrl, window.location.origin)
+    if (isLocalHost(apiUrl.hostname) && !isLocalHost(window.location.hostname)) {
+      return '/api'
+    }
+  } catch {
+    // If URL parsing fails we keep the configured value.
+  }
+
+  return configuredBaseUrl
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 const AUTH_PATHS = [
   '/auth/login',
   '/auth/register',
@@ -20,10 +48,15 @@ const AUTH_PATHS = [
 ]
 let refreshPromise: Promise<AuthResponse> | null = null
 
+const getLanguageHeader = () => appState.language.get() || 'en'
+
 const buildHeaders = (accessToken: string, options?: RequestInit) => {
   const headers = new Headers(options?.headers)
   if (options?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
+  }
+  if (!headers.has('Accept-Language')) {
+    headers.set('Accept-Language', getLanguageHeader())
   }
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
@@ -68,6 +101,7 @@ const refreshSession = async (): Promise<AuthResponse> => {
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
+        headers: buildHeaders(''),
       })
       if (!response.ok) {
         const message = await response.text()
@@ -162,6 +196,9 @@ export const api = {
   listTodos() {
     return request<Todo[]>('/todos')
   },
+  listUsers() {
+    return request<UserResponse[]>('/users')
+  },
   createTodo(payload: CreateTodoRequest) {
     return request<Todo>('/todos', {
       method: 'POST',
@@ -174,9 +211,18 @@ export const api = {
       body: JSON.stringify(payload),
     })
   },
+  reorderTodos(payload: ReorderTodosRequest) {
+    return request<void>('/todos/reorder-items', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
   deleteTodo(id: string) {
     return request<void>(`/todos/${id}`, {
       method: 'DELETE',
     })
+  },
+  getUnitTestCoverage() {
+    return request<UnitTestCoverageResponse>('/system/unit-test-coverage')
   },
 }

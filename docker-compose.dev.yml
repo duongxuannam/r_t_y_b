@@ -1,0 +1,36 @@
+services:
+  app:
+    image: rust:1.88-bookworm
+    working_dir: /app/back-end
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/todo_api
+      BIND_ADDR: 0.0.0.0:3000
+    volumes:
+      - ./back-end:/app/back-end
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - cargo-target:/app/back-end/target
+    command: bash -lc "cargo run"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: todo_api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - todo_api_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  cargo-target:
+  todo_api_pgdata:
+

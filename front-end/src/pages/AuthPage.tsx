@@ -7,6 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { PasswordInput } from '../components/ui/password-input'
+import { t } from '../lib/i18n'
 import { api } from '../services/api'
 import { appState, authActions } from '../state/appState'
 
@@ -38,7 +40,7 @@ const AuthPage = observer(() => {
         user: response.user,
       })
       form.password.set('')
-      form.notice.set('Authenticated successfully.')
+      form.notice.set(t('auth.success'))
       navigate('/app')
     },
   })
@@ -71,7 +73,7 @@ const AuthPage = observer(() => {
     (authMutation.error as Error)?.message ||
     (forgotMutation.error as Error)?.message ||
     (resetMutation.error as Error)?.message ||
-    'Auth request failed.'
+    t('auth.requestFailed')
   const successMessage = form.notice.get()
   const showResetSuccess = form.mode.get() === 'reset' && resetMutation.isSuccess && successMessage
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -94,26 +96,26 @@ const AuthPage = observer(() => {
   }
 
   return (
-    <section className="grid gap-6 lg:flex lg:items-stretch lg:gap-8">
-      <div className="relative flex flex-col fade-up lg:w-[1.15fr]">
+    <section className="grid gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+      <div className="relative flex flex-col fade-up">
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -top-8 -left-6 bg-primary/15 blur-2xl sm:block" />
         <div className="absolute hidden w-32 h-32 rounded-full pointer-events-none -bottom-10 right-8 bg-secondary/15 blur-2xl sm:block" />
         <div className="relative flex h-full flex-col overflow-hidden glass-panel p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Secure access
+                {t('auth.secureAccess')}
               </p>
               <h1 className="mt-2 text-2xl font-semibold font-display sm:text-3xl">
-                Authenticate
+                {t('auth.title')}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Connect with the Rust API to manage todos with JWT auth.
+                {t('auth.subtitle')}
               </p>
             </div>
             <div className='flex '>
               <div className="px-4 py-1 text-xs font-semibold rounded-full shadow-sm bg-card/80 text-muted-foreground">
-                JWT powered
+                {t('auth.jwtPowered')}
               </div>
             </div>
           </div>
@@ -121,11 +123,11 @@ const AuthPage = observer(() => {
           <div className="grid grid-cols-2 gap-2 p-1 mt-6 text-xs rounded-2xl bg-secondary/70 sm:flex sm:flex-wrap sm:rounded-full sm:text-sm">
             {(
               isAuthed
-                ? [{ id: 'reset', label: 'Reset' }]
+                ? [{ id: 'reset', label: t('auth.tab.reset') }]
                 : [
-                    { id: 'login', label: 'Login' },
-                    { id: 'register', label: 'Register' },
-                    { id: 'forgot', label: 'Forgot' },
+                    { id: 'login', label: t('auth.tab.login') },
+                    { id: 'register', label: t('auth.tab.register') },
+                    { id: 'forgot', label: t('auth.tab.forgot') },
                   ]
             ).map((tab) => {
               const isActive = form.mode.get() === tab.id
@@ -148,12 +150,12 @@ const AuthPage = observer(() => {
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Email
+                {t('auth.email')}
               </label>
               <Input
                 type="email"
                 className="mt-2"
-                placeholder="Email address"
+                placeholder={t('auth.emailPlaceholder')}
                 value={form.email.get()}
                 onChange={(event) => form.email.set(event.target.value)}
               />
@@ -162,12 +164,11 @@ const AuthPage = observer(() => {
               <>
                 <div className="auth-field">
                   <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Password
+                    {t('auth.password')}
                   </label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     className="mt-2"
-                    placeholder="Enter your password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={form.password.get()}
                     onChange={(event) => form.password.set(event.target.value)}
                   />
@@ -177,21 +178,21 @@ const AuthPage = observer(() => {
                   type="submit"
                   disabled={authMutation.isPending}
                 >
-                  {authMutation.isPending ? 'Working...' : 'Continue'}
+                  {authMutation.isPending ? t('auth.working') : t('auth.continue')}
                 </Button>
               </>
             )}
             {form.mode.get() === 'forgot' && (
               <>
                 <p className="text-xs text-muted-foreground">
-                  We will email a reset link if the account exists.
+                  {t('auth.forgotHint')}
                 </p>
                 <Button
                   className="w-full shadow-glow"
                   type="submit"
                   disabled={forgotMutation.isPending}
                 >
-                  {forgotMutation.isPending ? 'Sending...' : 'Send reset email'}
+                  {forgotMutation.isPending ? t('auth.sending') : t('auth.sendReset')}
                 </Button>
               </>
             )}
@@ -199,24 +200,23 @@ const AuthPage = observer(() => {
               <>
                 <div className="auth-field">
                   <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Reset token
+                    {t('auth.resetToken')}
                   </label>
                   <Input
                     type="text"
                     className="mt-2"
-                    placeholder="Paste your reset token"
+                    placeholder={t('auth.resetTokenPlaceholder')}
                     value={form.resetToken.get()}
                     onChange={(event) => form.resetToken.set(event.target.value)}
                   />
                 </div>
                 <div className="auth-field">
                   <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    New password
+                    {t('auth.newPassword')}
                   </label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     className="mt-2"
-                    placeholder="Create a new password"
+                    placeholder={t('auth.newPasswordPlaceholder')}
                     value={form.resetPassword.get()}
                     onChange={(event) => form.resetPassword.set(event.target.value)}
                   />
@@ -226,10 +226,10 @@ const AuthPage = observer(() => {
                   type="submit"
                   disabled={resetMutation.isPending}
                 >
-                  {resetMutation.isPending ? 'Updating...' : 'Reset password'}
+                  {resetMutation.isPending ? t('auth.updating') : t('auth.resetPassword')}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Use 8+ characters with a mix of letters and numbers.
+                  {t('auth.passwordHint')}
                 </p>
               </>
             )}
@@ -253,8 +253,8 @@ const AuthPage = observer(() => {
                   <div>
                     <AlertTitle>
                       {authMutation.isError || forgotMutation.isError || resetMutation.isError
-                        ? 'Authentication failed'
-                        : 'Success'}
+                        ? t('auth.failure')
+                        : t('auth.successTitle')}
                     </AlertTitle>
                     <AlertDescription>
                       {authMutation.isError || forgotMutation.isError || resetMutation.isError
@@ -268,47 +268,47 @@ const AuthPage = observer(() => {
         </div>
       </div>
 
-      <div className="glass-panel flex h-full flex-col p-6 fade-up fade-delay-1 sm:p-8 lg:w-[0.85fr]">
-        <h2 className="text-xl font-semibold font-display sm:text-2xl">Auth checklist</h2>
+      <div className="glass-panel flex h-full flex-col p-6 fade-up fade-delay-1 sm:p-8">
+        <h2 className="text-xl font-semibold font-display sm:text-2xl">{t('auth.checklist')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          What happens after you connect your account.
+          {t('auth.checklistSubtitle')}
         </p>
         <div className="mt-6 space-y-4 text-sm text-muted-foreground">
           <div className="p-4 border shadow-sm rounded-2xl border-border/60 bg-card/70">
             <div className="flex items-center justify-between">
               <Badge variant="outline">JWT</Badge>
-              <span className="text-xs text-muted-foreground">Access + refresh</span>
+              <span className="text-xs text-muted-foreground">{t('auth.accessRefresh')}</span>
             </div>
             <p className="mt-3">
-              Keep the access token in memory and local storage for fast requests.
+              {t('auth.accessRefreshDescription')}
             </p>
           </div>
           <div className="p-4 border shadow-sm rounded-2xl border-border/60 bg-card/70">
             <div className="flex items-center justify-between">
               <Badge variant="outline">Refresh</Badge>
-              <span className="text-xs text-muted-foreground">Token renewal</span>
+              <span className="text-xs text-muted-foreground">{t('auth.tokenRenewal')}</span>
             </div>
             <p className="mt-3">
-              Use the refresh endpoint when you add automatic token rotation.
+              {t('auth.tokenRenewalDescription')}
             </p>
           </div>
           <div className="p-4 border shadow-sm rounded-2xl border-border/60 bg-card/70">
             <div className="flex items-center justify-between">
               <Badge variant="outline">Security</Badge>
-              <span className="text-xs text-muted-foreground">API calls</span>
+              <span className="text-xs text-muted-foreground">{t('auth.apiCalls')}</span>
             </div>
-            <p className="mt-3">Always send Authorization: Bearer &lt;token&gt;.</p>
+            <p className="mt-3">{t('auth.apiCallsDescription')}</p>
           </div>
           <div className="p-4 border shadow-sm rounded-2xl border-border/60 bg-card/70">
             <div className="flex items-center justify-between">
               <Badge variant="outline">Reset</Badge>
-              <span className="text-xs text-muted-foreground">Account recovery</span>
+              <span className="text-xs text-muted-foreground">{t('auth.accountRecovery')}</span>
             </div>
-            <p className="mt-3">Use the reset token sent to your inbox.</p>
+            <p className="mt-3">{t('auth.accountRecoveryDescription')}</p>
           </div>
         </div>
         <div className="p-4 mt-6 text-xs border border-dashed rounded-2xl border-border bg-card/60 text-muted-foreground">
-          <p className="text-[10px] uppercase tracking-[0.3em]">Request header</p>
+          <p className="text-[10px] uppercase tracking-[0.3em]">{t('auth.requestHeader')}</p>
           <code className="block mt-2 text-xs text-foreground">
             Authorization: Bearer &lt;access_token&gt;
           </code>

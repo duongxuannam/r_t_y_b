@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+changed_staged_rust="$(git diff --name-only --cached -- back-end | grep -E '\.rs$|build\.rs$' || true)"
+if [[ -z "$changed_staged_rust" ]]; then
+  exit 0
+fi
+
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "pre-commit: cargo is not installed" >&2
+  exit 1
+fi
+
+echo "pre-commit: running cargo fmt for back-end"
+(
+  cd back-end
+  cargo fmt --all
+)
+
+# Stage rustfmt changes automatically.
+rust_files="$(git status --porcelain back-end | awk '{print $2}' | grep -E '\.rs$|build\.rs$' || true)"
+if [[ -n "$rust_files" ]]; then
+  # shellcheck disable=SC2086
+  git add $rust_files
+fi
