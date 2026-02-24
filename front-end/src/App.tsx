@@ -123,6 +123,7 @@ const App = observer(() => {
   const queryClient = useQueryClient()
   const [tourOpen, setTourOpen] = useState(false)
   const [tourStep, setTourStep] = useState(0)
+  const [logoutPending, setLogoutPending] = useState(false)
   const localizedThemeOptions = themeOptions.map((option) => ({
     ...option,
     label: option.id === 'light' ? t('theme.light') : t('theme.dark'),
@@ -181,6 +182,9 @@ const App = observer(() => {
   }, [])
 
   const handleLogout = async () => {
+    if (logoutPending) return
+
+    setLogoutPending(true)
     try {
       await api.logout()
     } catch {
@@ -189,6 +193,7 @@ const App = observer(() => {
     authActions.logout()
     queryClient.removeQueries({ queryKey: ['todos'], exact: true })
     queryClient.removeQueries({ queryKey: ['users'], exact: true })
+    setLogoutPending(false)
   }
 
   const markTourSeen = () => {
@@ -276,8 +281,9 @@ const App = observer(() => {
                           <button
                             className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                             onClick={handleLogout}
+                            disabled={logoutPending}
                           >
-                            {t('header.logout')}
+                            {logoutPending ? t('header.loggingOut') : t('header.logout')}
                           </button>
                         </div>
                       ) : (
