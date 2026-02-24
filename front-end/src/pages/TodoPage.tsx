@@ -35,6 +35,11 @@ const TodoPage = observer(() => {
   const { listQuery, createMutation, updateMutation, reorderMutation, deleteMutation } =
     useTodos(isAuthed)
   const { listQuery: usersQuery } = useUsers(isAuthed)
+  const isMutatingTodo =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    reorderMutation.isPending ||
+    deleteMutation.isPending
 
   const todos = listQuery.data ?? []
   const users = usersQuery.data ?? []
@@ -309,6 +314,16 @@ const TodoPage = observer(() => {
 
         {listQuery.isError && null}
 
+        {isMutatingTodo && (
+          <Alert variant="default" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <div>
+              <AlertTitle>{t('todo.updatingTitle')}</AlertTitle>
+              <AlertDescription>{t('todo.updatingDescription')}</AlertDescription>
+            </div>
+          </Alert>
+        )}
+
         {!listQuery.isLoading && (
           <div className="mt-6 space-y-5">
             {todos.length === 0 ? (
@@ -418,8 +433,9 @@ const TodoPage = observer(() => {
                                     size="sm"
                                     className="text-destructive"
                                     onClick={() => deleteMutation.mutate(todo.id)}
+                                    disabled={deleteMutation.isPending || reorderMutation.isPending}
                                   >
-                                    {t('todo.delete')}
+                                    {deleteMutation.isPending ? t('todo.deleting') : t('todo.delete')}
                                   </Button>
                                 </div>
                                 {isAuthed && sortedUsers.length > 0 && (
