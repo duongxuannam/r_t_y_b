@@ -5,11 +5,21 @@ use axum::{
 };
 use uuid::Uuid;
 
-use crate::{error::AppError, services::auth_service, state::AppState};
+use crate::{error::AppError, models::auth::Role, services::auth_service, state::AppState};
 
 #[derive(Debug, Clone)]
 pub struct AuthUser {
     pub user_id: Uuid,
+    pub role: Role,
+}
+
+impl AuthUser {
+    pub fn require_admin(&self) -> Result<(), AppError> {
+        if self.role == Role::Admin {
+            return Ok(());
+        }
+        Err(AppError::Forbidden)
+    }
 }
 
 #[async_trait]
@@ -32,7 +42,8 @@ impl FromRequestParts<AppState> for AuthUser {
 
         let claims = auth_service::decode_token(&state.jwt.secret, token)?;
         let user_id = Uuid::parse_str(&claims.sub).map_err(|_| AppError::Unauthorized)?;
+        let role = Role::try_from(claims.role.as_str()).map_err(|_| AppError::Unauthorized)?;
 
-        Ok(AuthUser { user_id })
+        Ok(AuthUser { user_id, role })
     }
 }

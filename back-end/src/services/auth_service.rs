@@ -10,7 +10,7 @@ use crate::{
     error::AppError,
     models::auth::{
         AuthResponse, Claims, ForgotPasswordRequest, LoginRequest, RegisterRequest,
-        ResetPasswordRequest, UserResponse,
+        ResetPasswordRequest, Role, UserResponse,
     },
     services::email_service,
     state::AppState,
@@ -25,8 +25,8 @@ pub async fn register(
     let password_hash = hash_password(&payload.password)?;
     let user_id = Uuid::new_v4();
 
-    let user = sqlx::query_as::<_, UserResponse>(
-        "INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) RETURNING id, email",
+    let user = sqlx::query_as::<_, UserResponseRow>(
+        "INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) RETURNING id, email, role",
     )
     .bind(user_id)
     .bind(payload.email.to_lowercase())
@@ -45,7 +45,7 @@ pub async fn register(
     let tokens = create_tokens(state, user.id).await?;
     Ok((
         AuthResponse {
-            user,
+            user: user.into_response()?,
             access_token: tokens.access_token,
         },
         tokens.refresh_token,
@@ -56,21 +56,24 @@ pub async fn login(
     state: &AppState,
     payload: LoginRequest,
 ) -> Result<(AuthResponse, String), AppError> {
-    let user =
-        sqlx::query_as::<_, UserRow>("SELECT id, email, password_hash FROM users WHERE email = $1")
-            .bind(payload.email.to_lowercase())
-            .fetch_optional(&state.db)
-            .await?
-            .ok_or(AppError::Unauthorized)?;
+    let user = sqlx::query_as::<_, UserRow>(
+        "SELECT id, email, password_hash, role FROM users WHERE email = $1",
+    )
+    .bind(payload.email.to_lowercase())
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or(AppError::Unauthorized)?;
 
     verify_password(&payload.password, &user.password_hash)?;
 
+    let role = user.role_from_db()?;
     let tokens = create_tokens(state, user.id).await?;
     Ok((
         AuthResponse {
             user: UserResponse {
                 id: user.id,
                 email: user.email,
+                role,
             },
             access_token: tokens.access_token,
         },
@@ -85,7 +88,7 @@ pub async fn refresh(
     let token_hash = hash_token(refresh_token);
 
     let row = sqlx::query_as::<_, RefreshRow>(
-        "SELECT rt.user_id, rt.expires_at, u.email FROM refresh_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.token_hash = $1",
+        "SELECT rt.user_id, rt.expires_at, u.email, u.role FROM refresh_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.token_hash = $1",
     )
     .bind(&token_hash)
     .fetch_optional(&state.db)
@@ -101,12 +104,14 @@ pub async fn refresh(
         .execute(&state.db)
         .await?;
 
+    let role = row.role_from_db()?;
     let tokens = create_tokens(state, row.user_id).await?;
     Ok((
         AuthResponse {
             user: UserResponse {
                 id: row.user_id,
                 email: row.email,
+                role,
             },
             access_token: tokens.access_token,
         },
@@ -135,10 +140,11 @@ pub async fn forgot_password(
 ) -> Result<(), AppError> {
     validate_email(&payload.email)?;
 
-    let user = sqlx::query_as::<_, UserResponse>("SELECT id, email FROM users WHERE email = $1")
-        .bind(payload.email.to_lowercase())
-        .fetch_optional(&state.db)
-        .await?;
+    let user =
+        sqlx::query_as::<_, UserResponseRow>("SELECT id, email, role FROM users WHERE email = $1")
+            .bind(payload.email.to_lowercase())
+            .fetch_optional(&state.db)
+            .await?;
 
     let Some(user) = user else {
         return Ok(());
@@ -215,17 +221,49 @@ pub async fn reset_password(
 }
 
 #[derive(Debug, FromRow)]
+struct UserResponseRow {
+    id: Uuid,
+    email: String,
+    role: String,
+}
+
+impl UserResponseRow {
+    fn into_response(self) -> Result<UserResponse, AppError> {
+        let role = Role::try_from(self.role.as_str()).map_err(|_| AppError::Internal)?;
+        Ok(UserResponse {
+            id: self.id,
+            email: self.email,
+            role,
+        })
+    }
+}
+
+#[derive(Debug, FromRow)]
 struct UserRow {
     id: Uuid,
     email: String,
     password_hash: String,
+    role: String,
+}
+
+impl UserRow {
+    fn role_from_db(&self) -> Result<Role, AppError> {
+        Role::try_from(self.role.as_str()).map_err(|_| AppError::Internal)
+    }
 }
 
 #[derive(Debug, FromRow)]
 struct RefreshRow {
     user_id: Uuid,
     email: String,
+    role: String,
     expires_at: DateTime<Utc>,
+}
+
+impl RefreshRow {
+    fn role_from_db(&self) -> Result<Role, AppError> {
+        Role::try_from(self.role.as_str()).map_err(|_| AppError::Internal)
+    }
 }
 
 #[derive(Debug, FromRow)]
@@ -292,10 +330,16 @@ fn hash_token(token: &str) -> String {
     hex::encode(digest)
 }
 
-fn create_access_token(secret: &str, user_id: Uuid, ttl_minutes: i64) -> Result<String, AppError> {
+fn create_access_token(
+    secret: &str,
+    user_id: Uuid,
+    role: Role,
+    ttl_minutes: i64,
+) -> Result<String, AppError> {
     let exp = (Utc::now() + Duration::minutes(ttl_minutes)).timestamp() as usize;
     let claims = Claims {
         sub: user_id.to_string(),
+        role: role.as_str().to_string(),
         exp,
     };
     encode(
@@ -317,8 +361,19 @@ pub fn decode_token(secret: &str, token: &str) -> Result<Claims, AppError> {
 }
 
 async fn create_tokens(state: &AppState, user_id: Uuid) -> Result<TokenPair, AppError> {
-    let access_token =
-        create_access_token(&state.jwt.secret, user_id, state.jwt.access_ttl_minutes)?;
+    let user_role = sqlx::query_scalar::<_, String>("SELECT role FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_optional(&state.db)
+        .await?
+        .ok_or(AppError::Unauthorized)?;
+    let role = Role::try_from(user_role.as_str()).map_err(|_| AppError::Internal)?;
+
+    let access_token = create_access_token(
+        &state.jwt.secret,
+        user_id,
+        role,
+        state.jwt.access_ttl_minutes,
+    )?;
 
     let refresh_token = Uuid::new_v4().to_string();
     let token_hash = hash_token(&refresh_token);
@@ -367,10 +422,11 @@ mod tests {
         let secret = "test-secret";
         let user_id = Uuid::new_v4();
 
-        let token = create_access_token(secret, user_id, 5).expect("token");
+        let token = create_access_token(secret, user_id, Role::User, 5).expect("token");
         let claims = decode_token(secret, &token).expect("claims");
 
         assert_eq!(claims.sub, user_id.to_string());
+        assert_eq!(claims.role, "user");
     }
 
     #[test]
@@ -411,7 +467,7 @@ mod tests {
     #[test]
     fn decode_token_rejects_wrong_secret() {
         let user_id = Uuid::new_v4();
-        let token = create_access_token("expected", user_id, 5).expect("token");
+        let token = create_access_token("expected", user_id, Role::User, 5).expect("token");
 
         let result = decode_token("wrong-secret", &token);
         assert!(matches!(result, Err(AppError::Unauthorized)));
@@ -422,9 +478,16 @@ mod tests {
         let secret = "another-test-secret";
         let user_id = Uuid::new_v4();
 
-        let token = create_access_token(secret, user_id, 5).expect("token");
+        let token = create_access_token(secret, user_id, Role::User, 5).expect("token");
         let claims = decode_token(secret, &token).expect("claims");
 
         assert!(claims.exp >= Utc::now().timestamp() as usize);
+    }
+
+    #[test]
+    fn role_try_from_maps_known_values() {
+        assert_eq!(Role::try_from("user"), Ok(Role::User));
+        assert_eq!(Role::try_from("admin"), Ok(Role::Admin));
+        assert!(Role::try_from("owner").is_err());
     }
 }
