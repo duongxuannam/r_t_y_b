@@ -6,7 +6,15 @@ use crate::{
     state::AppState,
 };
 
-const TODO_STATUSES: [&str; 3] = ["todo", "in_progress", "done"];
+const TODO_STATUSES: [&str; 7] = [
+    "todo",
+    "planned",
+    "in_progress",
+    "fixing",
+    "waiting_test",
+    "done",
+    "failed",
+];
 
 fn normalize_title(title: &str) -> Result<String, AppError> {
     let trimmed = title.trim();
@@ -59,7 +67,7 @@ async fn ensure_user_exists(state: &AppState, user_id: Uuid) -> Result<(), AppEr
 
 pub async fn list_todos(state: &AppState, user_id: Uuid) -> Result<Vec<TodoResponse>, AppError> {
     let todos = sqlx::query_as::<_, TodoResponse>(
-        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.reporter_id = $1 OR todos.assignee_id = $1 ORDER BY CASE todos.status WHEN 'todo' THEN 1 WHEN 'in_progress' THEN 2 WHEN 'done' THEN 3 ELSE 4 END, todos.position ASC, todos.updated_at DESC",
+        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.reporter_id = $1 OR todos.assignee_id = $1 ORDER BY CASE todos.status WHEN 'todo' THEN 1 WHEN 'planned' THEN 2 WHEN 'in_progress' THEN 3 WHEN 'fixing' THEN 4 WHEN 'waiting_test' THEN 5 WHEN 'done' THEN 6 WHEN 'failed' THEN 7 ELSE 8 END, todos.position ASC, todos.updated_at DESC",
     )
     .bind(user_id)
     .fetch_all(&state.db)
@@ -95,7 +103,7 @@ pub async fn create_todo(
     .fetch_one(&state.db)
     .await?;
 
-    let completed = status == "done";
+    let completed = matches!(status.as_str(), "done" | "failed");
 
     let todo = sqlx::query_as::<_, TodoResponse>(
         "INSERT INTO todos (id, reporter_id, assignee_id, title, completed, status, position) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, reporter_id, (SELECT email FROM users WHERE id = reporter_id) AS reporter_email, assignee_id, (SELECT email FROM users WHERE id = assignee_id) AS assignee_email, title, completed, status, position, created_at, updated_at",
@@ -162,14 +170,14 @@ pub async fn update_todo(
             if value {
                 "done".to_string()
             } else {
-                "todo".to_string()
+                "in_progress".to_string()
             }
         });
     }
 
     if let Some(status_value) = status.as_deref() {
         if completed.is_none() {
-            completed = Some(status_value == "done");
+            completed = Some(matches!(status_value, "done" | "failed"));
         }
     }
 
@@ -232,7 +240,7 @@ pub async fn reorder_todos(
 
     for item in payload.items {
         let status = normalize_status(&item.status)?;
-        let completed = status == "done";
+        let completed = matches!(status.as_str(), "done" | "failed");
         let result = sqlx::query(
             "UPDATE todos SET status = $1, position = $2, completed = $3, updated_at = NOW() WHERE id = $4 AND (reporter_id = $5 OR assignee_id = $5)",
         )
@@ -272,6 +280,22 @@ mod tests {
         assert!(
             matches!(result, Err(AppError::BadRequest(msg)) if msg.contains("title is required"))
         );
+    }
+
+    #[test]
+    fn normalize_status_supports_extended_statuses() {
+        for status in [
+            "todo",
+            "planned",
+            "in_progress",
+            "fixing",
+            "waiting_test",
+            "done",
+            "failed",
+        ] {
+            let normalized = normalize_status(status).expect("status should be valid");
+            assert_eq!(normalized, status);
+        }
     }
 
     #[test]

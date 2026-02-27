@@ -13,7 +13,15 @@ import { cn } from '../lib/utils'
 import { appState } from '../state/appState'
 import type { Todo } from '../types/todo'
 
-const columnOrder = ['todo', 'in_progress', 'done'] as const
+const columnOrder = [
+  'todo',
+  'planned',
+  'in_progress',
+  'fixing',
+  'waiting_test',
+  'done',
+  'failed',
+] as const
 
 const TodoPage = observer(() => {
   const todoForm = useObservable({ title: '', assigneeId: '' })
@@ -48,33 +56,76 @@ const TodoPage = observer(() => {
     [users],
   )
 
-  const columns = [
+  const statusSections = [
     {
-      id: 'todo',
-      title: t('todo.column.todo'),
-      description: t('todo.column.todoDescription'),
-      accent: 'border-slate-200/20 text-slate-200',
+      id: 'planning',
+      title: t('todo.section.planning'),
+      description: t('todo.section.planningDescription'),
+      columns: [
+        {
+          id: 'todo',
+          title: t('todo.column.todo'),
+          description: t('todo.column.todoDescription'),
+          accent: 'border-slate-200/20 text-slate-200',
+        },
+        {
+          id: 'planned',
+          title: t('todo.column.planned'),
+          description: t('todo.column.plannedDescription'),
+          accent: 'border-cyan-200/20 text-cyan-100',
+        },
+      ],
     },
     {
-      id: 'in_progress',
-      title: t('todo.column.inProgress'),
-      description: t('todo.column.inProgressDescription'),
-      accent: 'border-amber-200/20 text-amber-100',
+      id: 'processing',
+      title: t('todo.section.processing'),
+      description: t('todo.section.processingDescription'),
+      columns: [
+        {
+          id: 'in_progress',
+          title: t('todo.column.inProgress'),
+          description: t('todo.column.inProgressDescription'),
+          accent: 'border-amber-200/20 text-amber-100',
+        },
+        {
+          id: 'fixing',
+          title: t('todo.column.fixing'),
+          description: t('todo.column.fixingDescription'),
+          accent: 'border-orange-200/20 text-orange-100',
+        },
+        {
+          id: 'waiting_test',
+          title: t('todo.column.waitingTest'),
+          description: t('todo.column.waitingTestDescription'),
+          accent: 'border-violet-200/20 text-violet-100',
+        },
+      ],
     },
     {
       id: 'done',
-      title: t('todo.column.done'),
-      description: t('todo.column.doneDescription'),
-      accent: 'border-emerald-200/20 text-emerald-100',
+      title: t('todo.section.done'),
+      description: t('todo.section.doneDescription'),
+      columns: [
+        {
+          id: 'done',
+          title: t('todo.column.done'),
+          description: t('todo.column.doneDescription'),
+          accent: 'border-emerald-200/20 text-emerald-100',
+        },
+        {
+          id: 'failed',
+          title: t('todo.column.failed'),
+          description: t('todo.column.failedDescription'),
+          accent: 'border-rose-200/20 text-rose-100',
+        },
+      ],
     },
   ] as const
 
   const todosByStatus = useMemo(() => {
-    const grouped: Record<string, Todo[]> = {
-      todo: [],
-      in_progress: [],
-      done: [],
-    }
+    const grouped: Record<string, Todo[]> = Object.fromEntries(
+      columnOrder.map((status) => [status, [] as Todo[]]),
+    )
 
     const sorted = [...todos].sort((a, b) => a.position - b.position)
     sorted.forEach((todo) => {
@@ -88,7 +139,7 @@ const TodoPage = observer(() => {
   }, [todos])
 
   const totalCount = todos.length
-  const doneCount = todos.filter((todo) => todo.status === 'done').length
+  const doneCount = todos.filter((todo) => ['done', 'failed'].includes(todo.status)).length
 
   const handleCreate = () => {
     const title = todoForm.title.get().trim()
@@ -120,11 +171,9 @@ const TodoPage = observer(() => {
       ? (status as (typeof columnOrder)[number])
       : 'todo'
 
-    const nextGrouped: Record<string, Todo[]> = {
-      todo: [...todosByStatus.todo],
-      in_progress: [...todosByStatus.in_progress],
-      done: [...todosByStatus.done],
-    }
+    const nextGrouped: Record<string, Todo[]> = Object.fromEntries(
+      columnOrder.map((status) => [status, [...todosByStatus[status]]]),
+    )
 
     const sourceList = nextGrouped[normalizedSourceStatus]
     const sourceIndex = sourceList.findIndex((todo) => todo.id === activeDragId)
@@ -331,10 +380,19 @@ const TodoPage = observer(() => {
                 {t('todo.empty')}
               </div>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-3">
-                {columns.map((column) => {
-                  const columnTodos = todosByStatus[column.id]
-                  return (
+              <div className="space-y-4">
+                {statusSections.map((section) => (
+                  <div key={section.id} className="space-y-3">
+                    <div>
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        {section.title}
+                      </h2>
+                      <p className="text-xs text-muted-foreground">{section.description}</p>
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-3">
+                      {section.columns.map((column) => {
+                        const columnTodos = todosByStatus[column.id]
+                        return (
                     <div
                       key={column.id}
                       className="flex h-full flex-col rounded-2xl border border-border/60 bg-card/50 p-4"
@@ -470,8 +528,11 @@ const TodoPage = observer(() => {
                         )}
                       </div>
                     </div>
-                  )
-                })}
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
