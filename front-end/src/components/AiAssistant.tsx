@@ -15,15 +15,19 @@ type ChatMessage = {
 
 type ActionResult = {
   action: 'none' | 'create' | 'status' | 'theme' | 'language' | 'help'
-  status?: 'todo' | 'in_progress' | 'done'
+  status?: 'todo' | 'planned' | 'in_progress' | 'fixing' | 'waiting_test' | 'done' | 'failed'
   theme?: 'light' | 'dark'
   language?: 'en' | 'vi'
   title?: string
 }
 
-const STATUS_KEYWORDS: Array<{ value: 'todo' | 'in_progress' | 'done'; keywords: string[] }> = [
+const STATUS_KEYWORDS: Array<{ value: ActionResult['status']; keywords: string[] }> = [
   { value: 'done', keywords: ['done', 'hoàn thành', 'xong', 'complete', 'completed'] },
+  { value: 'failed', keywords: ['failed', 'thất bại', 'lỗi', 'fail'] },
+  { value: 'waiting_test', keywords: ['waiting test', 'waiting_test', 'đợi test', 'chờ test', 'qa'] },
+  { value: 'fixing', keywords: ['fixing', 'đang fix', 'sửa lỗi', 'fix bug'] },
   { value: 'in_progress', keywords: ['in progress', 'in_progress', 'đang làm', 'đang tiến hành'] },
+  { value: 'planned', keywords: ['planned', 'plan', 'lên kế hoạch', 'đã lên kế hoạch'] },
   { value: 'todo', keywords: ['todo', 'to-do', 'cần làm', 'backlog'] },
 ]
 
@@ -122,9 +126,9 @@ const getAssistantCopy = (language: 'en' | 'vi') => {
   if (language === 'vi') {
     return {
       greeting: 'Xin chào! Tôi có thể tạo todo, đổi trạng thái, bật dark mode hoặc đổi ngôn ngữ cho bạn.',
-      help: 'Bạn có thể nhắn: “Tạo todo: Học Rust”, “Chuyển todo "Học Rust" sang done”, “Bật dark mode”, “Chuyển sang tiếng Việt”.',
+      help: 'Bạn có thể nhắn: “Tạo todo: Học Rust”, “Chuyển todo "Học Rust" sang waiting_test”, “Bật dark mode”, “Chuyển sang tiếng Việt”.',
       missingTitle: 'Bạn muốn cập nhật todo nào? Hãy đặt tiêu đề trong dấu ngoặc kép.',
-      missingStatus: 'Bạn muốn đổi sang trạng thái nào? (todo, in_progress, done)',
+      missingStatus: 'Bạn muốn đổi sang trạng thái nào? (todo, planned, in_progress, fixing, waiting_test, done, failed)',
       notAuthed: 'Bạn cần đăng nhập để mình thao tác với todo.',
       created: (title: string) => `Đã tạo todo: ${title}.`,
       statusUpdated: (title: string, status: string) => `Đã cập nhật “${title}” sang ${status}.`,
@@ -139,9 +143,9 @@ const getAssistantCopy = (language: 'en' | 'vi') => {
 
   return {
     greeting: 'Hi! I can create todos, update statuses, toggle dark mode, or switch languages for you.',
-    help: 'Try: “Create todo: Learn Rust”, “Move todo "Learn Rust" to done”, “Enable dark mode”, “Switch to English”.',
+    help: 'Try: “Create todo: Learn Rust”, “Move todo "Learn Rust" to waiting_test”, “Enable dark mode”, “Switch to English”.',
     missingTitle: 'Which todo should I update? Please wrap the title in quotes.',
-    missingStatus: 'Which status should I move it to? (todo, in_progress, done)',
+    missingStatus: 'Which status should I move it to? (todo, planned, in_progress, fixing, waiting_test, done, failed)',
     notAuthed: 'Please log in so I can manage your todos.',
     created: (title: string) => `Created todo: ${title}.`,
     statusUpdated: (title: string, status: string) => `Updated “${title}” to ${status}.`,
