@@ -3,13 +3,18 @@ import { screen } from '@testing-library/react'
 import TodoPage from '../pages/TodoPage'
 import { appState } from '../state/appState'
 import { renderWithProviders } from '../test/testUtils'
+import type { Todo } from '../types/todo'
 
 const mockCreateMutate = vi.fn()
+const mockUpdateMutate = vi.fn()
+const mockDeleteMutate = vi.fn()
+
+let mockedTodos: Todo[] = []
 
 vi.mock('../hooks/useTodos', () => ({
   useTodos: () => ({
     listQuery: {
-      data: [],
+      data: mockedTodos,
       isLoading: false,
       isError: false,
       error: null,
@@ -21,7 +26,7 @@ vi.mock('../hooks/useTodos', () => ({
       error: null,
     },
     updateMutation: {
-      mutate: vi.fn(),
+      mutate: mockUpdateMutate,
       isPending: false,
       isError: false,
       error: null,
@@ -33,7 +38,7 @@ vi.mock('../hooks/useTodos', () => ({
       error: null,
     },
     deleteMutation: {
-      mutate: vi.fn(),
+      mutate: mockDeleteMutate,
       isPending: false,
       isError: false,
       error: null,
@@ -55,6 +60,7 @@ vi.mock('../hooks/useUsers', () => ({
 describe('TodoPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedTodos = []
     appState.auth.accessToken.set('')
     appState.auth.user.set({ id: '', email: '' })
   })
@@ -78,10 +84,35 @@ describe('TodoPage', () => {
     await user.click(screen.getByRole('button', { name: /create todo/i }))
     expect(screen.getByRole('button', { name: /^close$/i })).toBeInTheDocument()
 
-    await user.type(screen.getByPlaceholderText(/what needs to be done/i), 'New todo')
+    await user.type(screen.getByPlaceholderText(/todo title/i), 'New todo')
     await user.click(screen.getByRole('button', { name: /add todo/i }))
 
     expect(mockCreateMutate).toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: /^close$/i })).not.toBeInTheDocument()
+  })
+
+  it('supports list/detail view like jira', async () => {
+    mockedTodos = [
+      {
+        id: 't1',
+        title: 'Investigate production bug',
+        status: 'in_progress',
+        assignee_id: 'u1',
+        assignee_email: 'user@example.com',
+        reporter_id: 'u2',
+        reporter_email: 'reporter@example.com',
+        position: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-02T00:00:00.000Z',
+      },
+    ]
+
+    const user = userEvent.setup()
+    renderWithProviders(<TodoPage />)
+
+    await user.click(screen.getByRole('button', { name: /list \+ detail/i }))
+
+    expect(screen.getByText(/investigate production bug/i)).toBeInTheDocument()
+    expect(screen.getByText(/status:/i)).toBeInTheDocument()
   })
 })
