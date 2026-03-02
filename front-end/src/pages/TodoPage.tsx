@@ -1,5 +1,5 @@
 import { observer, useObservable } from '@legendapp/state/react'
-import { AlertTriangle, GripVertical, Plus } from 'lucide-react'
+import { AlertTriangle, GripVertical, LayoutList, Plus, Rows3 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
@@ -26,6 +26,8 @@ const columnOrder = [
 const TodoPage = observer(() => {
   const todoForm = useObservable({ title: '', assigneeId: '' })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
+  const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ status: string; index: number | null } | null>(
     null,
@@ -140,6 +142,15 @@ const TodoPage = observer(() => {
 
   const totalCount = todos.length
   const doneCount = todos.filter((todo) => ['done', 'failed'].includes(todo.status)).length
+  const selectedTodo = todos.find((todo) => todo.id === selectedTodoId) ?? null
+
+  const statusLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        statusSections.flatMap((section) => section.columns.map((column) => [column.id, column.title])),
+      ) as Record<string, string>,
+    [statusSections],
+  )
 
   const handleCreate = () => {
     const title = todoForm.title.get().trim()
@@ -310,6 +321,17 @@ const TodoPage = observer(() => {
     return () => window.cancelAnimationFrame(frameId)
   }, [isCreateOpen])
 
+  useEffect(() => {
+    if (todos.length === 0) {
+      setSelectedTodoId(null)
+      return
+    }
+
+    if (!selectedTodoId || !todos.some((todo) => todo.id === selectedTodoId)) {
+      setSelectedTodoId(todos[0]?.id ?? null)
+    }
+  }, [selectedTodoId, todos])
+
   return (
     <section className="grid gap-6">
       <div className="p-5 pb-28 glass-panel fade-up sm:p-6 sm:pb-6">
@@ -327,6 +349,28 @@ const TodoPage = observer(() => {
               <Plus className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">{t('todo.create')}</span>
             </Button>
+            <div className="inline-flex items-center rounded-xl border border-border/70 bg-card/70 p-1">
+              <Button
+                size="sm"
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('kanban')}
+                aria-label={t('todo.view.kanban')}
+                className="h-8 px-3"
+              >
+                <Rows3 className="h-4 w-4" aria-hidden="true" />
+                <span className="ml-1 hidden sm:inline">{t('todo.view.kanban')}</span>
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('list')}
+                aria-label={t('todo.view.list')}
+                className="h-8 px-3"
+              >
+                <LayoutList className="h-4 w-4" aria-hidden="true" />
+                <span className="ml-1 hidden sm:inline">{t('todo.view.list')}</span>
+              </Button>
+            </div>
           </div>
           <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
             <div className="rounded-2xl border bg-card/80 p-3 text-center shadow-sm">
@@ -379,7 +423,7 @@ const TodoPage = observer(() => {
               <div className="p-6 text-sm text-center border border-dashed rounded-2xl border-border">
                 {t('todo.empty')}
               </div>
-            ) : (
+            ) : viewMode === 'kanban' ? (
               <div className="space-y-4">
                 {statusSections.map((section) => (
                   <div key={section.id} className="space-y-3">
@@ -533,6 +577,99 @@ const TodoPage = observer(() => {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+                <div className="rounded-2xl border border-border/60 bg-card/50 p-3">
+                  <div className="space-y-3">
+                    {columnOrder.map((status) => {
+                      const items = todosByStatus[status]
+                      if (items.length === 0) return null
+                      return (
+                        <div key={status} className="space-y-2">
+                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                            {statusLabels[status] ?? status}
+                          </div>
+                          {items.map((todo) => (
+                            <button
+                              key={todo.id}
+                              type="button"
+                              onClick={() => setSelectedTodoId(todo.id)}
+                              className={cn(
+                                'w-full rounded-xl border p-3 text-left transition',
+                                selectedTodoId === todo.id
+                                  ? 'border-primary/50 bg-primary/10'
+                                  : 'border-border/60 bg-card/80 hover:border-primary/30',
+                              )}
+                            >
+                              <p className="font-medium">{todo.title}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {t('todo.assignee')}: {todo.assignee_email ?? t('todo.unassigned')}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
+                  {selectedTodo ? (
+                    <div className="space-y-4">
+                      <div>
+                        <h2 className="text-xl font-semibold font-display">{selectedTodo.title}</h2>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t('todo.status')}: {statusLabels[selectedTodo.status] ?? selectedTodo.status}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('todo.updated')} {new Date(selectedTodo.updated_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p>
+                          {t('todo.assignee')}: {selectedTodo.assignee_email ?? t('todo.unassigned')}
+                        </p>
+                        <p>
+                          {t('todo.reporter')}: {selectedTodo.reporter_email}
+                        </p>
+                      </div>
+                      {isAuthed && sortedUsers.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                            {t('todo.assignTo')}
+                          </label>
+                          <select
+                            className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            value={selectedTodo.assignee_id ?? sortedUsers[0]?.id ?? ''}
+                            onChange={(event) =>
+                              updateMutation.mutate({
+                                id: selectedTodo.id,
+                                payload: { assignee_id: event.target.value },
+                              })
+                            }
+                            disabled={updateMutation.isPending}
+                          >
+                            {sortedUsers.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.email}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <Button
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => deleteMutation.mutate(selectedTodo.id)}
+                        disabled={deleteMutation.isPending || reorderMutation.isPending}
+                      >
+                        {deleteMutation.isPending ? t('todo.deleting') : t('todo.delete')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">{t('todo.selectTodoHint')}</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
