@@ -67,7 +67,7 @@ async fn ensure_user_exists(state: &AppState, user_id: Uuid) -> Result<(), AppEr
 
 pub async fn list_todos(state: &AppState, user_id: Uuid) -> Result<Vec<TodoResponse>, AppError> {
     let todos = sqlx::query_as::<_, TodoResponse>(
-        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.reporter_id = $1 OR todos.assignee_id = $1 ORDER BY CASE todos.status WHEN 'todo' THEN 1 WHEN 'planned' THEN 2 WHEN 'in_progress' THEN 3 WHEN 'fixing' THEN 4 WHEN 'waiting_test' THEN 5 WHEN 'done' THEN 6 WHEN 'failed' THEN 7 ELSE 8 END, todos.position ASC, todos.updated_at DESC",
+        "SELECT todos.id, reporter.email AS reporter, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.reporter_id = $1 OR todos.assignee_id = $1 ORDER BY CASE todos.status WHEN 'todo' THEN 1 WHEN 'planned' THEN 2 WHEN 'in_progress' THEN 3 WHEN 'fixing' THEN 4 WHEN 'waiting_test' THEN 5 WHEN 'done' THEN 6 WHEN 'failed' THEN 7 ELSE 8 END, todos.position ASC, todos.updated_at DESC",
     )
     .bind(user_id)
     .fetch_all(&state.db)
@@ -106,7 +106,7 @@ pub async fn create_todo(
     let completed = matches!(status.as_str(), "done" | "failed");
 
     let todo = sqlx::query_as::<_, TodoResponse>(
-        "INSERT INTO todos (id, reporter_id, assignee_id, title, completed, status, position) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, reporter_id, (SELECT email FROM users WHERE id = reporter_id) AS reporter_email, assignee_id, (SELECT email FROM users WHERE id = assignee_id) AS assignee_email, title, completed, status, position, created_at, updated_at",
+        "INSERT INTO todos (id, reporter_id, assignee_id, title, completed, status, position) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, (SELECT email FROM users WHERE id = reporter_id) AS reporter, reporter_id, (SELECT email FROM users WHERE id = reporter_id) AS reporter_email, assignee_id, (SELECT email FROM users WHERE id = assignee_id) AS assignee_email, title, completed, status, position, created_at, updated_at",
     )
     .bind(Uuid::new_v4())
     .bind(user_id)
@@ -127,7 +127,7 @@ pub async fn get_todo(
     todo_id: Uuid,
 ) -> Result<TodoResponse, AppError> {
     let todo = sqlx::query_as::<_, TodoResponse>(
-        "SELECT todos.id, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.id = $1 AND EXISTS (SELECT 1 FROM todos visible_todos WHERE visible_todos.id = todos.id AND (visible_todos.reporter_id = $2 OR visible_todos.assignee_id = $2))",
+        "SELECT todos.id, reporter.email AS reporter, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.id = $1 AND EXISTS (SELECT 1 FROM todos visible_todos WHERE visible_todos.id = todos.id AND (visible_todos.reporter_id = $2 OR visible_todos.assignee_id = $2))",
     )
     .bind(todo_id)
     .bind(user_id)
@@ -196,7 +196,7 @@ pub async fn update_todo(
     };
 
     let todo = sqlx::query_as::<_, TodoResponse>(
-        "UPDATE todos SET title = COALESCE($1, title), completed = COALESCE($2, completed), status = COALESCE($3, status), position = COALESCE($4, position), assignee_id = COALESCE($5, assignee_id), updated_at = NOW() WHERE id = $6 AND (reporter_id = $7 OR assignee_id = $7) RETURNING id, reporter_id, (SELECT email FROM users WHERE id = reporter_id) AS reporter_email, assignee_id, (SELECT email FROM users WHERE id = assignee_id) AS assignee_email, title, completed, status, position, created_at, updated_at",
+        "UPDATE todos SET title = COALESCE($1, title), completed = COALESCE($2, completed), status = COALESCE($3, status), position = COALESCE($4, position), assignee_id = COALESCE($5, assignee_id), updated_at = NOW() WHERE id = $6 AND (reporter_id = $7 OR assignee_id = $7) RETURNING id, (SELECT email FROM users WHERE id = reporter_id) AS reporter, reporter_id, (SELECT email FROM users WHERE id = reporter_id) AS reporter_email, assignee_id, (SELECT email FROM users WHERE id = assignee_id) AS assignee_email, title, completed, status, position, created_at, updated_at",
     )
     .bind(title.as_deref())
     .bind(completed)

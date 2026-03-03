@@ -34,6 +34,7 @@ pub struct ReorderTodosRequest {
 #[derive(Debug, Serialize, FromRow, utoipa::ToSchema)]
 pub struct TodoResponse {
     pub id: Uuid,
+    pub reporter: String,
     pub reporter_id: Uuid,
     pub reporter_email: String,
     pub assignee_id: Option<Uuid>,

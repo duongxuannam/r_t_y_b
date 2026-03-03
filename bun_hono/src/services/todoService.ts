@@ -44,6 +44,7 @@ export const listTodos = async (state: AppState, userId: string): Promise<TodoRe
   const todos = await state.db<TodoResponse[]>`
     SELECT
       todos.id,
+      reporter.email AS reporter,
       todos.reporter_id,
       reporter.email AS reporter_email,
       todos.assignee_id,
@@ -94,6 +95,7 @@ export const createTodo = async (
     VALUES (${todoId}, ${userId}, ${assigneeId}, ${title}, ${completed}, ${status}, ${position})
     RETURNING
       id,
+      (SELECT email FROM users WHERE id = reporter_id) AS reporter,
       reporter_id,
       (SELECT email FROM users WHERE id = reporter_id) AS reporter_email,
       assignee_id,
@@ -113,6 +115,7 @@ export const getTodo = async (state: AppState, userId: string, todoId: string): 
   const [todo] = await state.db<TodoResponse[]>`
     SELECT
       todos.id,
+      reporter.email AS reporter,
       todos.reporter_id,
       reporter.email AS reporter_email,
       todos.assignee_id,
@@ -197,6 +200,7 @@ export const updateTodo = async (
     WHERE id = ${todoId} AND (reporter_id = ${userId} OR assignee_id = ${userId})
     RETURNING
       id,
+      (SELECT email FROM users WHERE id = reporter_id) AS reporter,
       reporter_id,
       (SELECT email FROM users WHERE id = reporter_id) AS reporter_email,
       assignee_id,
