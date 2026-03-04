@@ -99,6 +99,7 @@ describe('TodoPage', () => {
         status: 'in_progress',
         assignee_id: 'u1',
         assignee_email: 'user@example.com',
+        reporter: 'reporter@example.com',
         reporter_id: 'u2',
         reporter_email: 'reporter@example.com',
         position: 0,

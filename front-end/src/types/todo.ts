@@ -1,5 +1,6 @@
 export type Todo = {
   id: string
+  reporter: string
   reporter_id: string
   reporter_email: string
   assignee_id: string | null
