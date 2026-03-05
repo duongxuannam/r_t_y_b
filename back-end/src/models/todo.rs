@@ -31,7 +31,14 @@ pub struct ReorderTodosRequest {
     pub items: Vec<ReorderTodoItem>,
 }
 
-#[derive(Debug, Serialize, FromRow, utoipa::ToSchema)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct TodoRealtimeEvent {
+    pub event: String,
+    pub todo: Option<TodoResponse>,
+    pub todo_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow, utoipa::ToSchema)]
 pub struct TodoResponse {
     pub id: Uuid,
     pub reporter: String,

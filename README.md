@@ -64,6 +64,7 @@ Open http://127.0.0.1:3000/docs
 - Use the `access_token` as `Authorization: Bearer <token>`
 - `POST /auth/refresh` with a refresh token to get new tokens
 - `POST /auth/logout` to revoke a refresh token
+- `GET /todos/stream` (WebSocket, requires `Authorization: Bearer <token>`) to receive real-time todo changes for reporter/assignee related users
 - `POST /auth/forgot` to send a reset token email
 - `POST /auth/reset` to set a new password using the reset token
 

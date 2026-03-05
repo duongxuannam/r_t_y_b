@@ -5,4 +5,5 @@ pub mod extractors;
 pub mod health_controller;
 pub mod system_controller;
 pub mod todo_controller;
+pub mod todo_realtime_controller;
 pub mod user_controller;
