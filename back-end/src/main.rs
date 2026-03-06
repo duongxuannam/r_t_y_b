@@ -9,7 +9,7 @@ use axum::{Router, routing::get};
 use axum_prometheus::PrometheusMetricLayer;
 use controllers::{
     ai_controller, auth_controller, docs_controller, health_controller, system_controller,
-    todo_controller, user_controller,
+    todo_controller, todo_realtime_controller, user_controller,
 };
 use dotenvy::dotenv;
 use error::AppError;
@@ -141,6 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(ai_controller::routes())
         .merge(auth_controller::routes())
         .merge(todo_controller::routes())
+        .merge(todo_realtime_controller::routes())
         .merge(user_controller::routes())
         .merge(system_controller::routes())
         .fallback(api_not_found);

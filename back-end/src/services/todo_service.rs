@@ -2,7 +2,9 @@ use uuid::Uuid;
 
 use crate::{
     error::AppError,
-    models::todo::{CreateTodoRequest, ReorderTodosRequest, TodoResponse, UpdateTodoRequest},
+    models::todo::{
+        CreateTodoRequest, ReorderTodosRequest, TodoRealtimeEvent, TodoResponse, UpdateTodoRequest,
+    },
     state::AppState,
 };
 
@@ -65,6 +67,35 @@ async fn ensure_user_exists(state: &AppState, user_id: Uuid) -> Result<(), AppEr
     Ok(())
 }
 
+async fn broadcast_todo_event(
+    state: &AppState,
+    actor_id: Uuid,
+    event: &str,
+    todo: Option<&TodoResponse>,
+    todo_id: Option<Uuid>,
+) {
+    let mut targets = Vec::new();
+    if let Some(todo) = todo {
+        targets.push(todo.reporter_id);
+        if let Some(assignee_id) = todo.assignee_id {
+            targets.push(assignee_id);
+        }
+    }
+
+    let payload = TodoRealtimeEvent {
+        event: event.to_string(),
+        todo: todo.cloned(),
+        todo_id,
+    };
+
+    if let Ok(message) = serde_json::to_string(&payload) {
+        state
+            .todo_realtime_hub
+            .broadcast_todo_change(actor_id, &targets, message)
+            .await;
+    }
+}
+
 pub async fn list_todos(state: &AppState, user_id: Uuid) -> Result<Vec<TodoResponse>, AppError> {
     let todos = sqlx::query_as::<_, TodoResponse>(
         "SELECT todos.id, reporter.email AS reporter, todos.reporter_id, reporter.email AS reporter_email, todos.assignee_id, assignee.email AS assignee_email, todos.title, todos.completed, todos.status, todos.position, todos.created_at, todos.updated_at FROM todos JOIN users reporter ON reporter.id = todos.reporter_id LEFT JOIN users assignee ON assignee.id = todos.assignee_id WHERE todos.reporter_id = $1 OR todos.assignee_id = $1 ORDER BY CASE todos.status WHEN 'todo' THEN 1 WHEN 'planned' THEN 2 WHEN 'in_progress' THEN 3 WHEN 'fixing' THEN 4 WHEN 'waiting_test' THEN 5 WHEN 'done' THEN 6 WHEN 'failed' THEN 7 ELSE 8 END, todos.position ASC, todos.updated_at DESC",
@@ -118,6 +149,7 @@ pub async fn create_todo(
     .fetch_one(&state.db)
     .await?;
 
+    broadcast_todo_event(state, user_id, "todo_created", Some(&todo), None).await;
     Ok(todo)
 }
 
@@ -209,10 +241,12 @@ pub async fn update_todo(
     .await?
     .ok_or(AppError::NotFound)?;
 
+    broadcast_todo_event(state, user_id, "todo_updated", Some(&todo), None).await;
     Ok(todo)
 }
 
 pub async fn delete_todo(state: &AppState, user_id: Uuid, todo_id: Uuid) -> Result<(), AppError> {
+    let todo = get_todo(state, user_id, todo_id).await?;
     let result =
         sqlx::query("DELETE FROM todos WHERE id = $1 AND (reporter_id = $2 OR assignee_id = $2)")
             .bind(todo_id)
@@ -224,6 +258,7 @@ pub async fn delete_todo(state: &AppState, user_id: Uuid, todo_id: Uuid) -> Resu
         return Err(AppError::NotFound);
     }
 
+    broadcast_todo_event(state, user_id, "todo_deleted", Some(&todo), Some(todo_id)).await;
     Ok(())
 }
 
@@ -258,6 +293,7 @@ pub async fn reorder_todos(
     }
 
     tx.commit().await?;
+    broadcast_todo_event(state, user_id, "todo_reordered", None, None).await;
     Ok(())
 }
 

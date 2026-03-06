@@ -3,6 +3,8 @@ use std::num::NonZeroU32;
 use axum::http::HeaderValue;
 use sqlx::{Pool, Postgres};
 
+use crate::services::todo_realtime_service::TodoRealtimeHub;
+
 #[derive(Clone)]
 pub struct AppState {
     pub db: Pool<Postgres>,
@@ -14,6 +16,7 @@ pub struct AppState {
     pub rate_limit_burst: NonZeroU32,
     pub refresh_cookie_name: String,
     pub refresh_cookie_secure: bool,
+    pub todo_realtime_hub: TodoRealtimeHub,
 }
 
 #[derive(Clone)]
@@ -145,6 +148,7 @@ impl AppState {
             rate_limit_burst,
             refresh_cookie_name,
             refresh_cookie_secure,
+            todo_realtime_hub: TodoRealtimeHub::default(),
         })
     }
 }
