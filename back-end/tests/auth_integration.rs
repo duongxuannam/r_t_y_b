@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use todo_api::{
     error::AppError,
     models::auth::{LoginRequest, RegisterRequest},
-    services::auth_service,
+    services::{auth_service, todo_realtime_service::TodoRealtimeHub},
     state::{AppState, EmailConfig, JwtConfig, OllamaConfig},
 };
 use uuid::Uuid;
@@ -63,6 +63,7 @@ async fn register_login_refresh_logout_flow() -> Result<(), AppError> {
         rate_limit_burst: NonZeroU32::new(20).unwrap(),
         refresh_cookie_name: "todo_refresh".into(),
         refresh_cookie_secure: false,
+        todo_realtime_hub: TodoRealtimeHub::default(),
     };
 
     let email = format!("user+{}@example.com", Uuid::new_v4());
